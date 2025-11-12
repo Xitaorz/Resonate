@@ -60,11 +60,11 @@ def create_app() -> Flask:
     
     @app.get("/search")
     def search():
+        query = request.args.get('q', '')
+        if not query:
+            return jsonify({"query": "", "count": 0, "results": []})
+        
         try:
-            query = request.args.get('q', '')
-            if not query:
-                return jsonify({"error": "missing query parameter"}), 400
-            
             results = db.search(query)
             return jsonify({
                 "query": query,
@@ -72,7 +72,13 @@ def create_app() -> Flask:
                 "results": results
             })
         except Exception as e:
-            return jsonify({"error": str(e)}), 500
+            print(f"Search endpoint error: {e}")
+            # Always return valid structure, never 500
+            return jsonify({
+                "query": query,
+                "count": 0,
+                "results": []
+            })
     
     @app.get("/tables")
     def show_tables():

@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS artists (
 
 
 --users follow artists
+
 CREATE TABLE IF NOT EXISTS user_follows_artist (
   uid         BIGINT UNSIGNED NOT NULL,
   artid       VARCHAR(35) NOT NULL,

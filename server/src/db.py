@@ -63,7 +63,15 @@ class DB:
     #execute sql 
     def execute_script(self, sql_text: str) -> None:
         conn = self._ensure_conn()
-        statements = [s.strip() for s in sql_text.split(";") if s.strip()]
+        lines = []
+        for line in sql_text.split('\n'):
+            if '--' in line:
+                line = line.split('--')[0]
+            if line.strip():  
+                lines.append(line)
+        cleaned_sql = '\n'.join(lines)
+        
+        statements = [s.strip() for s in cleaned_sql.split(";") if s.strip()]
         with conn.cursor() as cur:
             for stmt in statements:
                 cur.execute(stmt)
@@ -78,28 +86,54 @@ class DB:
     
     #search for songs, artists, and albums
     def search(self, query: str) -> List[Dict[str, Any]]:
-        conn = self._ensure_conn()
         search_pattern = f"%{query}%"
-        with conn.cursor() as cur:
-            sql = """
-                SELECT 
-                    s.name AS song_name,
-                    a.name AS artist_name,
-                    al.title AS album_name,
-                    al.release_date
-                FROM songs s
-                JOIN album_song als ON s.sid = als.sid
-                JOIN albums al ON als.alid = al.alid
-                JOIN album_owned_by_artist aoa ON al.alid = aoa.alid
-                JOIN artists a ON aoa.artid = a.artid
-                WHERE LOWER(s.name) LIKE LOWER(%s)
-                   OR LOWER(a.name) LIKE LOWER(%s)
-                   OR LOWER(al.title) LIKE LOWER(%s)
-                ORDER BY s.name
-            """
-            cur.execute(sql, (search_pattern, search_pattern, search_pattern))
-            rows = cur.fetchall()
-        return list(rows)
+        sql = """
+            SELECT 
+                s.name AS song_name,
+                a.name AS artist_name,
+                al.title AS album_name,
+                al.release_date
+            FROM songs s
+            JOIN album_song als ON s.sid = als.sid
+            JOIN albums al ON als.alid = al.alid
+            JOIN album_owned_by_artist aoa ON al.alid = aoa.alid
+            JOIN artists a ON aoa.artid = a.artid
+            WHERE LOWER(s.name) LIKE LOWER(%s)
+               OR LOWER(a.name) LIKE LOWER(%s)
+               OR LOWER(al.title) LIKE LOWER(%s)
+            ORDER BY s.name
+            LIMIT 100
+        """
+        
+        try:
+            conn = self._ensure_conn()
+            with conn.cursor() as cur:
+                cur.execute(sql, (search_pattern, search_pattern, search_pattern))
+                rows = cur.fetchall()
+            return list(rows)
+        except Exception as e:
+            # Connection is corrupted - force close and reconnect
+            print(f"DB error, forcing reconnect: {e}")
+            try:
+                # Close the corrupted connection
+                if self._conn:
+                    try:
+                        self._conn.close()
+                    except:
+                        pass
+                    self._conn = None
+                
+                # Create fresh connection and retry
+                self.connect()
+                conn = self._ensure_conn()
+                with conn.cursor() as cur:
+                    cur.execute(sql, (search_pattern, search_pattern, search_pattern))
+                    rows = cur.fetchall()
+                return list(rows)
+            except Exception as retry_error:
+                print(f"Retry also failed: {retry_error}")
+                # Return empty list to prevent frontend crash
+                return []
     
     #show all tables in the database
     def show_tables(self) -> List[Dict[str, Any]]:
