@@ -1,4 +1,4 @@
-import { useState, ChangeEvent } from "react";
+import { useState, type ChangeEvent } from "react";
 import { Input } from "./ui/input";
 import { SongList } from "./SongList";
 import { useQuery } from '@tanstack/react-query'
@@ -41,9 +41,9 @@ export function Search() {
         <div className="text-red-500 text-sm mt-2">Failed to load results.</div>
       ) : null}
       <SongList songs={
-        results.map((song: Result, index: number) => ({  
+        results.map((song: Result) => ({  
           title: song.song_name,
-          id: `${song.song_name}-${song.artist_name}-${song.album_name}-${index}`,
+          id: `${song.song_name}-${song.artist_name}-${song.album_name}`,
           artist: song.artist_name,
           album: song.album_name,
         }))
