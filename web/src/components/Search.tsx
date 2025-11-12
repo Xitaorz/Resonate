@@ -3,8 +3,6 @@ import { Input } from "./ui/input";
 import { SongList } from "./SongList";
 import { useQuery } from '@tanstack/react-query'
 
-const BASE_URL = "http://localhost:3000";
-
 type Result = {
   song_name: string;
   artist_name: string;
@@ -13,7 +11,7 @@ type Result = {
 };
 
 async function searchSongs(query: string): Promise<Result[]> {
-  const res = await fetch(`${BASE_URL}/search?q=${encodeURIComponent(query)}`);
+  const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
   const data = await res.json();
   console.log(data.results)
   return data.results;
