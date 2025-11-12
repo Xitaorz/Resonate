@@ -1,0 +1,10 @@
+Yidan Wang: 
+As of Milestone 1: built E/R diagram, wrote interface doc, wrote features 3 and 4 description and sql queries, added backend APIs and docker compose file.
+Carl Yan: 
+As of Milestone 1: built E/R diagram, wrote relational data model, generated sample data base, gave relational schemas for each table
+David Dong: 
+As of Milestone 1: built E/R diagram, verified the outputs of each feature based on sample database, wrote queries for advanced feature (search using tags)
+Molly Wu: 
+As of Milestone 1: built E/R diagram, wrote report doc, wrote features 1 and 2 description and sql queries, contribute to data table creations and insertions
+Tom Wang: 
+As of Milestone 1: built E/R diagram, imported production and sample data set, parse dataset, built UI for basic features

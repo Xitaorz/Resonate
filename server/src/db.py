@@ -57,10 +57,10 @@ class DB:
 
     def _ensure_conn(self) -> pymysql.connections.Connection:
         if self._conn is None:
-            raise RuntimeError("DB connection has not been established. Call connect() first.")
+            raise RuntimeError("DB not connected. Call connect() first.")
         return self._conn
     
-    #execute sql scripts
+    #execute sql 
     def execute_script(self, sql_text: str) -> None:
         conn = self._ensure_conn()
         statements = [s.strip() for s in sql_text.split(";") if s.strip()]
@@ -76,7 +76,7 @@ class DB:
             rows = cur.fetchall()
         return list(rows)
     
-    # Search for songs, artists, and albums
+    #search for songs, artists, and albums
     def search(self, query: str) -> List[Dict[str, Any]]:
         conn = self._ensure_conn()
         search_pattern = f"%{query}%"
@@ -101,7 +101,7 @@ class DB:
             rows = cur.fetchall()
         return list(rows)
     
-    # Show all tables in the database
+    #show all tables in the database
     def show_tables(self) -> List[Dict[str, Any]]:
         conn = self._ensure_conn()
         with conn.cursor() as cur:
@@ -109,7 +109,7 @@ class DB:
             rows = cur.fetchall()
         return list(rows)
     
-    # Get average ratings for all songs
+    #get average ratings for all songs
     def get_rating_averages(self) -> List[Dict[str, Any]]:
         conn = self._ensure_conn()
         with conn.cursor() as cur:
@@ -132,7 +132,7 @@ class DB:
             rows = cur.fetchall()
         return list(rows)
 
-    # Ping the db and test the connection
+
     def ping(self) -> bool:
         try:
             conn = self._ensure_conn()
@@ -145,7 +145,6 @@ class DB:
             print("PING ERROR:", repr(e))
             return False
 
-#initialize and return a db
 def get_db() -> DB:
     db = DB()
     db.connect()

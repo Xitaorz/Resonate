@@ -1,6 +1,4 @@
--- Create a virtual mapping: one row per (track_id, tag)
 CREATE OR REPLACE VIEW virt_song_tag AS
-    /* PARTY */
     SELECT id AS track_id, `name` AS song_name, 'party' AS tag
     FROM Songs
     WHERE danceability >= 0.60
@@ -11,7 +9,6 @@ CREATE OR REPLACE VIEW virt_song_tag AS
       AND `mode` = 1
 
 UNION ALL
-    /* RELAXING */
     SELECT id, `name`, 'relaxing'
     FROM Songs
     WHERE energy < 0.50
@@ -20,7 +17,6 @@ UNION ALL
       AND loudness < -8
 
 UNION ALL
-    /* SAD */
     SELECT id, `name`, 'sad'
     FROM Songs
     WHERE valence < 0.35
@@ -30,7 +26,6 @@ UNION ALL
       AND `mode` = 0
 
 UNION ALL
-    /* WORKOUT */
     SELECT id, `name`, 'workout'
     FROM Songs
     WHERE energy >= 0.75
@@ -39,7 +34,6 @@ UNION ALL
       AND loudness > -6
 
 UNION ALL
-    /* SLEEPING */
     SELECT id, `name`, 'sleeping'
     FROM Songs
     WHERE energy < 0.30

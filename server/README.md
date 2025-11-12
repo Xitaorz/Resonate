@@ -1,9 +1,9 @@
 # CS348
 The Project Repo for CS348
 
-## Quick Start
+> For assignment requirements, please see [`milestone.md`](./milestone.md)
 
-The application **automatically initializes** the database schema and example data on first startup - no manual setup required!
+## Quick Start
 
 ---
 
@@ -98,7 +98,7 @@ On first startup, the app will automatically:
 ```bash
 python -m src.manage init
 ```
-⚠️ This takes several minutes and requires Kaggle credentials
+This takes several minutes and requires Kaggle credentials
 
 ### Test database connectivity
 ```bash
@@ -107,10 +107,7 @@ python -m src.manage ping
 
 ### Stop and remove Docker containers
 ```bash
-# For docker-compose setup
 docker-compose down
-
-# For local MySQL setup
 docker stop m0-mysql
 docker rm m0-mysql
 ```
@@ -198,13 +195,22 @@ Implements query from `test-sample-rating-avg.sql`
   ]
 }
 ```
-Features description:
-Feature 1 Song search by keyword: This feature allows users to search for songs by entering part or all of a song title, artist name, or album name. Users type a keyword into a search bar and click “Search.” The application queries the database and displays matching songs with their title, artist, album, duration, and popularity. If no matches are found, a message such as “No songs found” is shown.
+#### Features description:
 
-Feature 2 Rating of song average of all users: This feature allows users to rate songs on a 0.5 to 5-star scale and view each song’s overall average rating. Users can submit or update their rating for any song, and the system automatically recalculates the song’s average score. The application displays the average rating next to each song’s title, artist, and album to help users identify popular or highly rated tracks.
+Feature 1 
 
-Feature 3 List songs of an artist: The user clicks on an artist’s name from the search results or discover page. This feature is used by regular users of the application who want to explore songs by a specific artist. After the artist is selected, the backend retrieves all albums owned by that artist from the database, and then lists all songs contained in those albums. The songs are displayed in a list format showing each song’s title, album name, and release date. The user can scroll through the list and click on any song to open its detailed view with ratings, tags, and comments.
+Song search by keyword: This feature allows users to search for songs by entering part or all of a song title, artist name, or album name. Users type a keyword into a search bar and click “Search.” The application queries the database and displays matching songs with their title, artist, album, duration, and popularity. If no matches are found, a message such as “No songs found” is shown.
 
-Feature 4 Display User data: This feature allows users to view a summary of their personal information and activity statistics on the profile page. When a user opens their profile, the backend aggregates and displays data such as the total number of playlists they have created, the total number of songs they have marked as favorites, and whether they hold VIP status. This feature is designed for our application users, helping them quickly understand their engagement level and account tier.
+Feature 2
+
+Rating of song average of all users: This feature allows users to rate songs on a 0.5 to 5-star scale and view each song’s overall average rating. Users can submit or update their rating for any song, and the system automatically recalculates the song’s average score. The application displays the average rating next to each song’s title, artist, and album to help users identify popular or highly rated tracks.
+
+Feature 3 
+
+List songs of an artist: The user clicks on an artist’s name from the search results or discover page. This feature is used by regular users of the application who want to explore songs by a specific artist. After the artist is selected, the backend retrieves all albums owned by that artist from the database, and then lists all songs contained in those albums. The songs are displayed in a list format showing each song’s title, album name, and release date. The user can scroll through the list and click on any song to open its detailed view with ratings, tags, and comments.
+
+Feature 4 
+
+Display User data: This feature allows users to view a summary of their personal information and activity statistics on the profile page. When a user opens their profile, the backend aggregates and displays data such as the total number of playlists they have created, the total number of songs they have marked as favorites, and whether they hold VIP status. This feature is designed for our application users, helping them quickly understand their engagement level and account tier.
 
 

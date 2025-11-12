@@ -18,7 +18,7 @@ def _read_file(path: str) -> str:
 
 
 
-#Execute .sql files to initialize table contents
+#Execute sql files to initialize table contents!!!!
 def init_db() -> None:
     db: DB = get_db()
 
@@ -85,7 +85,7 @@ def download_data() -> None:
     path = kagglehub.dataset_download("rodolfofigueroa/spotify-12m-songs")
     print(f"Data downloaded to {path}")
 
-#Tests connection
+#test connection
 def ping() -> int:
     db: DB = get_db()
     if db.ping():
@@ -94,7 +94,7 @@ def ping() -> int:
     print("DB DOWN")
     return 1
 
-#list all rows in users table
+#list all rows in the users table
 def list_users() -> int:
     try:
         db: DB = get_db()

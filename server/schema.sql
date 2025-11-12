@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS artists (
 
 
 
--- Users follow artists
+--users follow artists
 CREATE TABLE IF NOT EXISTS user_follows_artist (
   uid         BIGINT UNSIGNED NOT NULL,
   artid       VARCHAR(35) NOT NULL,
@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS songs (
   release_date DATE NULL
 );
 
--- Song in album (M:N keeps track/ordering)
+-- Song in album
 CREATE TABLE IF NOT EXISTS album_song (
   alid     VARCHAR(35) NOT NULL,
   sid      VARCHAR(35) NOT NULL,
@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS album_song (
   CONSTRAINT fk_as_song  FOREIGN KEY (sid)  REFERENCES songs(sid)  ON DELETE CASCADE
 );
 
--- Tags and song–tag mapping
+-- tags and song–tag mapping
 CREATE TABLE IF NOT EXISTS tags (
   tid  BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   name VARCHAR(100) NOT NULL UNIQUE
@@ -101,7 +101,7 @@ CREATE TABLE IF NOT EXISTS song_tag (
   CONSTRAINT fk_st_tag  FOREIGN KEY (tid) REFERENCES tags(tid) ON DELETE CASCADE
 );
 
--- view: tags for each album via its songs
+-- tags for each album via its songs
 CREATE OR REPLACE VIEW album_tag_view AS
 SELECT DISTINCT asg.alid, st.tid
 FROM album_song AS asg
@@ -117,7 +117,7 @@ CREATE TABLE IF NOT EXISTS playlists (
   CONSTRAINT fk_pl_owner FOREIGN KEY (uid) REFERENCES users(uid) ON DELETE CASCADE
 );
 
--- Playlist contains songs (ordered)
+-- Playlist contains songs (its ordered)
 CREATE TABLE IF NOT EXISTS playlist_song (
   plstid   BIGINT UNSIGNED NOT NULL,
   sid      VARCHAR(35) NOT NULL,
@@ -151,14 +151,14 @@ CREATE TABLE IF NOT EXISTS user_rates(
   uid        BIGINT UNSIGNED NOT NULL,
   sid        VARCHAR(35) NOT NULL,
   rated_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  -- one rating per user per song
+  -- we only allow one rating per user per song
   UNIQUE KEY uk_user_song_rating (uid, sid, rid),
   CONSTRAINT fk_sr_user FOREIGN KEY (uid) REFERENCES users(uid) ON DELETE CASCADE,
   CONSTRAINT fk_sr_song FOREIGN KEY (sid) REFERENCES songs(sid) ON DELETE CASCADE,
   CONSTRAINT fk_sr_rating FOREIGN KEY (rid) REFERENCES ratings(rid) ON DELETE CASCADE
 );
 
--- Users can follow playlists
+-- users can follow playlists
 CREATE TABLE IF NOT EXISTS user_follow_playlist (
   uid       BIGINT UNSIGNED NOT NULL,
   plstid    BIGINT UNSIGNED NOT NULL,
