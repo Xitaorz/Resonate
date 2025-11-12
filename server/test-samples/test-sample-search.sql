@@ -9,4 +9,5 @@ JOIN album_owned_by_artist aoa ON al.alid = aoa.alid
 JOIN artists a ON aoa.artid = a.artid
 WHERE LOWER(s.name) LIKE LOWER('%Lady%')
    OR LOWER(a.name) LIKE LOWER('%Lady%')
-   OR LOWER(al.title) LIKE LOWER('%Lady%');
+   OR LOWER(al.title) LIKE LOWER('%Lady%')
+LIMIT 100;
