@@ -23,7 +23,8 @@ print(
 class DB:
 
     def __init__(self) -> None:
-        self._conn: Optional[pymysql.connections.Connection] = None
+        # Store connection config only (no connection stored here)
+        self._config: Dict[str, Any] = {}
 
     def import_csv(self, file_path: str, table_name: str, sample=False) -> int | None:
         df = pd.read_csv(file_path)
@@ -37,28 +38,35 @@ class DB:
         return df.to_sql(table_name, create_engine(self.connection_string), if_exists='append', index=False)
 
     def connect(self) -> None:
-        host = os.getenv("MYSQL_HOST", "127.0.0.1")
-        port = int(os.getenv("MYSQL_PORT", "3306"))
-        user = os.getenv("MYSQL_USER", "root")
-        password = os.getenv("MYSQL_PASS", "")
-        database = os.getenv("MYSQL_DB", "")
-        self.connection_string = f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}"
+        """Initialize connection config (called once at startup)"""
+        self._config = {
+            'host': os.getenv("MYSQL_HOST", "127.0.0.1"),
+            'port': int(os.getenv("MYSQL_PORT", "3306")),
+            'user': os.getenv("MYSQL_USER", "root"),
+            'password': os.getenv("MYSQL_PASS", ""),
+            'database': os.getenv("MYSQL_DB", ""),
+        }
+        self.connection_string = f"mysql+pymysql://{self._config['user']}:{self._config['password']}@{self._config['host']}:{self._config['port']}/{self._config['database']}"
 
-        # Establish connection
-        self._conn = pymysql.connect(
-            host=host,
-            port=port,
-            user=user,
-            password=password,
-            database=database,
+    def get_connection(self) -> pymysql.connections.Connection:
+        if not self._config:
+            raise RuntimeError("DB not initialized. Call connect() first.")
+        
+        return pymysql.connect(
+            host=self._config['host'],
+            port=self._config['port'],
+            user=self._config['user'],
+            password=self._config['password'],
+            database=self._config['database'],
             cursorclass=DictCursor,
             autocommit=True,
         )
 
     def _ensure_conn(self) -> pymysql.connections.Connection:
-        if self._conn is None:
-            raise RuntimeError("DB not connected. Call connect() first.")
-        return self._conn
+        from flask import g
+        if not hasattr(g, 'db_conn') or g.db_conn is None:
+            g.db_conn = self.get_connection()
+        return g.db_conn
     
     #execute sql 
     def execute_script(self, sql_text: str) -> None:
@@ -91,6 +99,7 @@ class DB:
             SELECT 
                 s.name AS song_name,
                 a.name AS artist_name,
+                a.artid AS artist_id,
                 al.title AS album_name,
                 al.release_date
             FROM songs s
@@ -105,35 +114,39 @@ class DB:
             LIMIT 100
         """
         
-        try:
-            conn = self._ensure_conn()
-            with conn.cursor() as cur:
-                cur.execute(sql, (search_pattern, search_pattern, search_pattern))
-                rows = cur.fetchall()
-            return list(rows)
-        except Exception as e:
-            # Connection is corrupted - force close and reconnect
-            print(f"DB error, forcing reconnect: {e}")
-            try:
-                # Close the corrupted connection
-                if self._conn:
-                    try:
-                        self._conn.close()
-                    except:
-                        pass
-                    self._conn = None
-                
-                # Create fresh connection and retry
-                self.connect()
-                conn = self._ensure_conn()
-                with conn.cursor() as cur:
-                    cur.execute(sql, (search_pattern, search_pattern, search_pattern))
-                    rows = cur.fetchall()
-                return list(rows)
-            except Exception as retry_error:
-                print(f"Retry also failed: {retry_error}")
-                # Return empty list to prevent frontend crash
-                return []
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            cur.execute(sql, (search_pattern, search_pattern, search_pattern))
+            rows = cur.fetchall()
+        return list(rows)
+    
+    #get songs by artist
+    def get_artist_songs(self, artist_id: str) -> List[Dict[str, Any]]:
+        sql = """
+            SELECT
+                s.sid,                
+                s.name  AS song_title, 
+                a.title AS album_title,
+                ar.name AS artist_name 
+            FROM artists AS ar
+            JOIN album_owned_by_artist AS aoa
+                ON ar.artid = aoa.artid         
+            JOIN albums AS a
+                ON aoa.alid = a.alid            
+            JOIN album_song AS als
+                ON a.alid = als.alid            
+            JOIN songs AS s
+                ON als.sid = s.sid              
+            WHERE ar.artid = %s
+            ORDER BY als.track_no ASC
+            LIMIT 50
+        """
+        
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            cur.execute(sql, (artist_id,))
+            rows = cur.fetchall()
+        return list(rows)
     
     #show all tables in the database
     def show_tables(self) -> List[Dict[str, Any]]:
