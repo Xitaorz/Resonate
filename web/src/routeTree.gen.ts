@@ -11,7 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RatingsRouteImport } from './routes/ratings'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ArtistArtistIdRouteImport } from './routes/artistSongsPage'
+import { Route as ArtistArtistIdRouteImport } from './routes/artist.$artistId'
 
 const RatingsRoute = RatingsRouteImport.update({
   id: '/ratings',
