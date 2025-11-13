@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query'
 type Result = {
   song_name: string;
   artist_name: string;
+  artist_id: string;
   release_date: string;
   album_name: string;
 };
@@ -45,6 +46,7 @@ export function Search() {
           title: song.song_name,
           id: `${song.song_name}-${song.artist_name}-${song.album_name}`,
           artist: song.artist_name,
+          artistId: song.artist_id,
           album: song.album_name,
         }))
       } />

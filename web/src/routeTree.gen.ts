@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RatingsRouteImport } from './routes/ratings'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ArtistArtistIdRouteImport } from './routes/artistSongsPage'
 
 const RatingsRoute = RatingsRouteImport.update({
   id: '/ratings',
@@ -22,31 +23,40 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ArtistArtistIdRoute = ArtistArtistIdRouteImport.update({
+  id: '/artist/$artistId',
+  path: '/artist/$artistId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ratings': typeof RatingsRoute
+  '/artist/$artistId': typeof ArtistArtistIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ratings': typeof RatingsRoute
+  '/artist/$artistId': typeof ArtistArtistIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/ratings': typeof RatingsRoute
+  '/artist/$artistId': typeof ArtistArtistIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/ratings'
+  fullPaths: '/' | '/ratings' | '/artist/$artistId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/ratings'
-  id: '__root__' | '/' | '/ratings'
+  to: '/' | '/ratings' | '/artist/$artistId'
+  id: '__root__' | '/' | '/ratings' | '/artist/$artistId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   RatingsRoute: typeof RatingsRoute
+  ArtistArtistIdRoute: typeof ArtistArtistIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +75,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/artist/$artistId': {
+      id: '/artist/$artistId'
+      path: '/artist/$artistId'
+      fullPath: '/artist/$artistId'
+      preLoaderRoute: typeof ArtistArtistIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   RatingsRoute: RatingsRoute,
+  ArtistArtistIdRoute: ArtistArtistIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
