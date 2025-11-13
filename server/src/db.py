@@ -63,26 +63,46 @@ class DB:
         )
 
     def _ensure_conn(self) -> pymysql.connections.Connection:
-        from flask import g
-        if not hasattr(g, 'db_conn') or g.db_conn is None:
-            g.db_conn = self.get_connection()
-        return g.db_conn
-    
+        # If running inside Flask app context, reuse g.db_conn.
+        # Otherwise return a fresh connection (caller must close it).
+        try:
+            from flask import has_app_context, g
+        except Exception:
+            # Flask not available for some reason: return a fresh connection
+            return self.get_connection()
+
+        if has_app_context():
+            if not hasattr(g, 'db_conn') or g.db_conn is None:
+                g.db_conn = self.get_connection()
+            return g.db_conn
+        # No app context -> caller expects a standalone connection
+        return self.get_connection()
+
     #execute sql 
     def execute_script(self, sql_text: str) -> None:
+        # Ensure we close the connection if we created a temporary one
+        from flask import has_app_context
         conn = self._ensure_conn()
-        lines = []
-        for line in sql_text.split('\n'):
-            if '--' in line:
-                line = line.split('--')[0]
-            if line.strip():  
-                lines.append(line)
-        cleaned_sql = '\n'.join(lines)
-        
-        statements = [s.strip() for s in cleaned_sql.split(";") if s.strip()]
-        with conn.cursor() as cur:
-            for stmt in statements:
-                cur.execute(stmt)
+        close_after = not has_app_context()
+        try:
+            lines = []
+            for line in sql_text.split('\n'):
+                if '--' in line:
+                    line = line.split('--')[0]
+                if line.strip():
+                    lines.append(line)
+            cleaned_sql = '\n'.join(lines)
+
+            statements = [s.strip() for s in cleaned_sql.split(";") if s.strip()]
+            with conn.cursor() as cur:
+                for stmt in statements:
+                    cur.execute(stmt)
+        finally:
+            if close_after:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
     
     #list all users
     def list_users(self) -> List[Dict[str, Any]]:

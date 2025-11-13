@@ -16,7 +16,7 @@ DATASET_FILE_NAME = "tracks_features.csv"
 def _read_file(path: str) -> str:
     return Path(path).read_text(encoding="utf-8")
 
-
+PRODUCTION_DATA_SIZE = 100_000
 
 #Execute sql files to initialize table contents!!!!
 def init_db() -> None:
@@ -41,11 +41,14 @@ def import_data() -> None:
     )
     db: DB = get_db()
 
-    df = df.sample(n=5000, random_state=1)
+    df = df.sample(n=PRODUCTION_DATA_SIZE, random_state=1)
+    df = df[df["name"].notnull()]
+    df = df[df["album"].notnull()]
     print(df["release_date"].head())
 
     df['release_date'] = pd.to_datetime(df['release_date'], format='%Y-%m-%d', errors="coerce")
     songs_df = df[["id", "name", "release_date"]]
+    songs_df = songs_df.drop_duplicates(subset=["id"])
     songs_df.rename(columns={"id": "sid"}, inplace=True)
 
     
@@ -54,8 +57,6 @@ def import_data() -> None:
     artists_df = df.explode(["artists", "artist_ids"])[["artists", "artist_ids"]].drop_duplicates(subset=["artist_ids"])
     artists_df.rename(columns={"artist_ids": "artid", "artists": "name"}, inplace=True)
     artists_df = artists_df[["artid", "name"]]
-    albums_df = df[["album_id", "album", "release_date"]].drop_duplicates(subset=["album_id"])
-    albums_df = albums_df.rename(columns={"album_id": "alid", "album": "title"}).drop_duplicates(subset=["alid"])
     
     
     
@@ -65,6 +66,8 @@ def import_data() -> None:
     print("Importing artists...")
     db.import_df(artists_df, "artists")
     print("Importing albums...")
+    albums_df = df[["album_id", "album", "release_date"]].drop_duplicates(subset=["album_id"])
+    albums_df = albums_df.rename(columns={"album_id": "alid", "album": "title"}).drop_duplicates(subset=["alid"])
     db.import_df(albums_df, "albums")
 
     print("Importing album_song...")
