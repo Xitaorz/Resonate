@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import time
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, g
 from .db import get_db, DB
 from .manage import import_data, init_db
 from flask_cors import CORS  
@@ -34,15 +34,34 @@ def create_app() -> Flask:
         raise RuntimeError("Database connection failed")
     
     try:
-        with db._ensure_conn().cursor() as cur:
-            cur.execute("SHOW TABLES LIKE 'users'")
-            if not cur.fetchone():
-                init_db()
-                print("Database initialization complete.")
-                import_data()
-                print("Data imported!")
+        temp_conn = db.get_connection()
+        try:
+            with temp_conn.cursor() as cur:
+                cur.execute("SHOW TABLES LIKE 'users'")
+                if not cur.fetchone():
+                    init_db()
+                    print("Database initialization complete.")
+                    import_data()
+                    print("Data imported!")
+        finally:
+            temp_conn.close()
     except Exception as e:
         print(f"Error: {e}")
+    
+    @app.before_request
+    def before_request():
+        """Get a fresh database connection for this request"""
+        g.db_conn = db.get_connection()
+    
+    @app.teardown_appcontext
+    def teardown_db(exception=None):
+        """Close the database connection after each request"""
+        conn = g.pop('db_conn', None)
+        if conn is not None:
+            try:
+                conn.close()
+            except:
+                pass
 
     @app.get("/health/db")
     def health_db():
@@ -60,11 +79,11 @@ def create_app() -> Flask:
     
     @app.get("/search")
     def search():
+        query = request.args.get('q', '')
+        if not query:
+            return jsonify({"query": "", "count": 0, "results": []})
+        
         try:
-            query = request.args.get('q', '')
-            if not query:
-                return jsonify({"error": "missing query parameter"}), 400
-            
             results = db.search(query)
             return jsonify({
                 "query": query,
@@ -72,7 +91,29 @@ def create_app() -> Flask:
                 "results": results
             })
         except Exception as e:
-            return jsonify({"error": str(e)}), 500
+            print(f"Search endpoint error: {e}")
+            return jsonify({
+                "query": query,
+                "count": 0,
+                "results": []
+            })
+    
+    @app.get("/artist/<artist_id>/songs")
+    def get_artist_songs(artist_id: str):
+        try:
+            songs = db.get_artist_songs(artist_id)
+            return jsonify({
+                "artist_id": artist_id,
+                "count": len(songs),
+                "songs": songs
+            })
+        except Exception as e:
+            print(f"Artist songs endpoint error: {e}")
+            return jsonify({
+                "artist_id": artist_id,
+                "count": 0,
+                "songs": []
+            })
     
     @app.get("/tables")
     def show_tables():

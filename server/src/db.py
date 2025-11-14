@@ -23,7 +23,8 @@ print(
 class DB:
 
     def __init__(self) -> None:
-        self._conn: Optional[pymysql.connections.Connection] = None
+        # Store connection config only (no connection stored here)
+        self._config: Dict[str, Any] = {}
 
     def import_csv(self, file_path: str, table_name: str, sample=False) -> int | None:
         df = pd.read_csv(file_path)
@@ -37,36 +38,71 @@ class DB:
         return df.to_sql(table_name, create_engine(self.connection_string), if_exists='append', index=False)
 
     def connect(self) -> None:
-        host = os.getenv("MYSQL_HOST", "127.0.0.1")
-        port = int(os.getenv("MYSQL_PORT", "3306"))
-        user = os.getenv("MYSQL_USER", "root")
-        password = os.getenv("MYSQL_PASS", "")
-        database = os.getenv("MYSQL_DB", "")
-        self.connection_string = f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}"
+        """Initialize connection config (called once at startup)"""
+        self._config = {
+            'host': os.getenv("MYSQL_HOST", "127.0.0.1"),
+            'port': int(os.getenv("MYSQL_PORT", "3306")),
+            'user': os.getenv("MYSQL_USER", "root"),
+            'password': os.getenv("MYSQL_PASS", ""),
+            'database': os.getenv("MYSQL_DB", ""),
+        }
+        self.connection_string = f"mysql+pymysql://{self._config['user']}:{self._config['password']}@{self._config['host']}:{self._config['port']}/{self._config['database']}"
 
-        # Establish connection
-        self._conn = pymysql.connect(
-            host=host,
-            port=port,
-            user=user,
-            password=password,
-            database=database,
+    def get_connection(self) -> pymysql.connections.Connection:
+        if not self._config:
+            raise RuntimeError("DB not initialized. Call connect() first.")
+        
+        return pymysql.connect(
+            host=self._config['host'],
+            port=self._config['port'],
+            user=self._config['user'],
+            password=self._config['password'],
+            database=self._config['database'],
             cursorclass=DictCursor,
             autocommit=True,
         )
 
     def _ensure_conn(self) -> pymysql.connections.Connection:
-        if self._conn is None:
-            raise RuntimeError("DB not connected. Call connect() first.")
-        return self._conn
-    
+        # If running inside Flask app context, reuse g.db_conn.
+        # Otherwise return a fresh connection (caller must close it).
+        try:
+            from flask import has_app_context, g
+        except Exception:
+            # Flask not available for some reason: return a fresh connection
+            return self.get_connection()
+
+        if has_app_context():
+            if not hasattr(g, 'db_conn') or g.db_conn is None:
+                g.db_conn = self.get_connection()
+            return g.db_conn
+        # No app context -> caller expects a standalone connection
+        return self.get_connection()
+
     #execute sql 
     def execute_script(self, sql_text: str) -> None:
+        # Ensure we close the connection if we created a temporary one
+        from flask import has_app_context
         conn = self._ensure_conn()
-        statements = [s.strip() for s in sql_text.split(";") if s.strip()]
-        with conn.cursor() as cur:
-            for stmt in statements:
-                cur.execute(stmt)
+        close_after = not has_app_context()
+        try:
+            lines = []
+            for line in sql_text.split('\n'):
+                if '--' in line:
+                    line = line.split('--')[0]
+                if line.strip():
+                    lines.append(line)
+            cleaned_sql = '\n'.join(lines)
+
+            statements = [s.strip() for s in cleaned_sql.split(";") if s.strip()]
+            with conn.cursor() as cur:
+                for stmt in statements:
+                    cur.execute(stmt)
+        finally:
+            if close_after:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
     
     #list all users
     def list_users(self) -> List[Dict[str, Any]]:
@@ -78,26 +114,57 @@ class DB:
     
     #search for songs, artists, and albums
     def search(self, query: str) -> List[Dict[str, Any]]:
-        conn = self._ensure_conn()
         search_pattern = f"%{query}%"
+        sql = """
+            SELECT 
+                s.name AS song_name,
+                a.name AS artist_name,
+                a.artid AS artist_id,
+                al.title AS album_name,
+                al.release_date
+            FROM songs s
+            JOIN album_song als ON s.sid = als.sid
+            JOIN albums al ON als.alid = al.alid
+            JOIN album_owned_by_artist aoa ON al.alid = aoa.alid
+            JOIN artists a ON aoa.artid = a.artid
+            WHERE LOWER(s.name) LIKE LOWER(%s)
+               OR LOWER(a.name) LIKE LOWER(%s)
+               OR LOWER(al.title) LIKE LOWER(%s)
+            ORDER BY s.name
+            LIMIT 100
+        """
+        
+        conn = self._ensure_conn()
         with conn.cursor() as cur:
-            sql = """
-                SELECT 
-                    s.name AS song_name,
-                    a.name AS artist_name,
-                    al.title AS album_name,
-                    al.release_date
-                FROM songs s
-                JOIN album_song als ON s.sid = als.sid
-                JOIN albums al ON als.alid = al.alid
-                JOIN album_owned_by_artist aoa ON al.alid = aoa.alid
-                JOIN artists a ON aoa.artid = a.artid
-                WHERE LOWER(s.name) LIKE LOWER(%s)
-                   OR LOWER(a.name) LIKE LOWER(%s)
-                   OR LOWER(al.title) LIKE LOWER(%s)
-                ORDER BY s.name
-            """
             cur.execute(sql, (search_pattern, search_pattern, search_pattern))
+            rows = cur.fetchall()
+        return list(rows)
+    
+    #get songs by artist
+    def get_artist_songs(self, artist_id: str) -> List[Dict[str, Any]]:
+        sql = """
+            SELECT
+                s.sid,                
+                s.name  AS song_title, 
+                a.title AS album_title,
+                ar.name AS artist_name 
+            FROM artists AS ar
+            JOIN album_owned_by_artist AS aoa
+                ON ar.artid = aoa.artid         
+            JOIN albums AS a
+                ON aoa.alid = a.alid            
+            JOIN album_song AS als
+                ON a.alid = als.alid            
+            JOIN songs AS s
+                ON als.sid = s.sid              
+            WHERE ar.artid = %s
+            ORDER BY als.track_no ASC
+            LIMIT 50
+        """
+        
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            cur.execute(sql, (artist_id,))
             rows = cur.fetchall()
         return list(rows)
     
