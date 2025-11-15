@@ -88,6 +88,17 @@ def download_data() -> None:
     path = kagglehub.dataset_download("rodolfofigueroa/spotify-12m-songs")
     print(f"Data downloaded to {path}")
 
+def execute_sql_file(path: str) -> int:
+    sql_path = Path(path)
+    if not sql_path.exists():
+        print(f"SQL file not found: {sql_path}")
+        return 2
+    sql_text = sql_path.read_text(encoding="utf-8")
+    db: DB = get_db()
+    db.execute_script(sql_text)
+    print(f"Executed SQL from {sql_path}")
+    return 0
+
 #test connection
 def ping() -> int:
     db: DB = get_db()
@@ -118,6 +129,11 @@ def main(argv: List[str]) -> int:
     if cmd == "init":
         init_db()
         import_data()
+        return 0
+    if cmd == "load-sql":
+        db: DB = get_db()
+        user_sql = _read_file("generate_user300.sql")
+        db.execute_script(user_sql)
         return 0
     if cmd == "ping":
         return ping()
