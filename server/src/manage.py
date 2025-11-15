@@ -24,8 +24,10 @@ def init_db() -> None:
 
     schema_sql = _read_file("schema.sql")
     example_sql = _read_file("example.sql")
+    large_sample = _read_file("large-sample-users.sql")
     db.execute_script(schema_sql)
     db.execute_script(example_sql)
+    db.execute_script(large_sample)
 
     print("Database initialized and exampleed.")
 
@@ -130,6 +132,7 @@ def main(argv: List[str]) -> int:
         init_db()
         import_data()
         return 0
+    #
     if cmd == "load-sql":
         db: DB = get_db()
         user_sql = _read_file("generate_user300.sql")
