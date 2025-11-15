@@ -132,12 +132,6 @@ def main(argv: List[str]) -> int:
         init_db()
         import_data()
         return 0
-    #
-    if cmd == "load-sql":
-        db: DB = get_db()
-        user_sql = _read_file("generate_user300.sql")
-        db.execute_script(user_sql)
-        return 0
     if cmd == "ping":
         return ping()
     if cmd == "list":
