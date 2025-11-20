@@ -167,3 +167,17 @@ CREATE TABLE IF NOT EXISTS user_follow_playlist (
   CONSTRAINT fk_ufp_user FOREIGN KEY (uid) REFERENCES users(uid) ON DELETE CASCADE,
   CONSTRAINT fk_ufp_playlist FOREIGN KEY (plstid) REFERENCES playlists(plstid) ON DELETE CASCADE
 );
+
+-- indexes 
+CREATE INDEX idx_album_owned_by_artist_artid ON album_owned_by_artist(artid);
+CREATE INDEX idx_album_owned_by_artist_alid  ON album_owned_by_artist(alid);
+
+CREATE INDEX idx_album_song_sid              ON album_song(sid);
+CREATE INDEX idx_album_song_alid_trackno     ON album_song(alid, track_no);
+
+
+CREATE INDEX idx_playlists_uid               ON playlists(uid);
+CREATE INDEX idx_user_favorite_song_uid      ON user_favorite_song(uid);
+
+CREATE INDEX idx_user_rates_sid              ON user_rates(sid);
+CREATE INDEX idx_user_rates_rid              ON user_rates(rid);

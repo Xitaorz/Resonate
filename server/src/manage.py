@@ -24,8 +24,10 @@ def init_db() -> None:
 
     schema_sql = _read_file("schema.sql")
     example_sql = _read_file("example.sql")
+    large_sample = _read_file("large-sample-users.sql")
     db.execute_script(schema_sql)
     db.execute_script(example_sql)
+    db.execute_script(large_sample)
 
     print("Database initialized and exampleed.")
 
@@ -87,6 +89,17 @@ def import_data() -> None:
 def download_data() -> None:
     path = kagglehub.dataset_download("rodolfofigueroa/spotify-12m-songs")
     print(f"Data downloaded to {path}")
+
+def execute_sql_file(path: str) -> int:
+    sql_path = Path(path)
+    if not sql_path.exists():
+        print(f"SQL file not found: {sql_path}")
+        return 2
+    sql_text = sql_path.read_text(encoding="utf-8")
+    db: DB = get_db()
+    db.execute_script(sql_text)
+    print(f"Executed SQL from {sql_path}")
+    return 0
 
 #test connection
 def ping() -> int:
