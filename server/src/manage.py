@@ -49,7 +49,20 @@ def import_data() -> None:
     print(df["release_date"].head())
 
     df['release_date'] = pd.to_datetime(df['release_date'], format='%Y-%m-%d', errors="coerce")
-    songs_df = df[["id", "name", "release_date"]]
+    numeric_feature_cols = [
+        "danceability",
+        "energy",
+        "valence",
+        "tempo",
+        "loudness",
+        "mode",
+        "acousticness",
+        "speechiness",
+    ]
+    for col in numeric_feature_cols:
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    songs_df = df[["id", "name", "release_date"] + numeric_feature_cols]
     songs_df = songs_df.drop_duplicates(subset=["id"])
     songs_df.rename(columns={"id": "sid"}, inplace=True)
 
