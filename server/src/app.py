@@ -76,6 +76,56 @@ def create_app() -> Flask:
             return jsonify(rows)
         except Exception as e:
             return jsonify({"error": str(e)}), 500
+
+    @app.put("/users/<int:uid>")
+    def update_user(uid: int):
+        payload = request.get_json(silent=True) or {}
+
+        allowed_fields = {
+            "username",
+            "email",
+            "gender",
+            "age",
+            "street",
+            "city",
+            "province",
+            "mbti",
+        }
+
+        user_fields = {k: v for k, v in payload.items() if k in allowed_fields}
+        if "age" in user_fields:
+            try:
+                user_fields["age"] = int(user_fields["age"]) if user_fields["age"] is not None else None
+            except (TypeError, ValueError):
+                return jsonify({"error": "age must be an integer"}), 400
+
+        hobbies = None
+        if "hobbies" in payload:
+            if not isinstance(payload["hobbies"], list):
+                return jsonify({"error": "hobbies must be a list of strings"}), 400
+
+            cleaned = []
+            for hobby in payload["hobbies"]:
+                if not isinstance(hobby, str):
+                    return jsonify({"error": "hobbies must be a list of strings"}), 400
+                trimmed = hobby.strip()
+                if trimmed:
+                    cleaned.append(trimmed)
+            hobbies = list(dict.fromkeys(cleaned))  # deduplicate while preserving order
+
+        if not user_fields and hobbies is None:
+            return jsonify({"error": "No profile fields or hobbies to update"}), 400
+
+        try:
+            updated_user = db.update_user_profile(uid, user_fields, hobbies)
+            return jsonify(updated_user)
+        except ValueError as e:
+            if "not found" in str(e).lower():
+                return jsonify({"error": str(e)}), 404
+            return jsonify({"error": str(e)}), 400
+        except Exception as e:
+            print(f"User update endpoint error: {e}")
+            return jsonify({"error": "Failed to update user profile"}), 500
     
     @app.get("/search")
     def search():
