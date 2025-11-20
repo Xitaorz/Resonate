@@ -114,7 +114,7 @@ docker rm m0-mysql
 
 ---
 
-## 📚 API Endpoints
+## 📚 API Endpoints 
 
 ### `GET /health/db`
 Check database connectivity status.
