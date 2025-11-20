@@ -71,7 +71,15 @@ CREATE TABLE IF NOT EXISTS album_owned_by_artist (
 CREATE TABLE IF NOT EXISTS songs (
   sid           VARCHAR(35) NOT NULL PRIMARY KEY,
   name          TEXT NOT NULL,
-  release_date DATE NULL
+  release_date  DATE NULL,
+  danceability  DECIMAL(4,3) NULL,
+  energy        DECIMAL(4,3) NULL,
+  valence       DECIMAL(4,3) NULL,
+  tempo         DECIMAL(6,2) NULL,
+  loudness      DECIMAL(5,2) NULL,
+  `mode`        TINYINT NULL,
+  acousticness  DECIMAL(5,4) NULL,
+  speechiness   DECIMAL(5,4) NULL
 );
 
 -- Song in album
@@ -172,7 +180,6 @@ CREATE TABLE IF NOT EXISTS user_follow_playlist (
 CREATE INDEX idx_album_owned_by_artist_artid ON album_owned_by_artist(artid);
 CREATE INDEX idx_album_owned_by_artist_alid  ON album_owned_by_artist(alid);
 
-CREATE INDEX idx_album_song_sid              ON album_song(sid);
 CREATE INDEX idx_album_song_alid_trackno     ON album_song(alid, track_no);
 
 
