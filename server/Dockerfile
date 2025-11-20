@@ -10,7 +10,7 @@ RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 COPY src ./src
-COPY schema.sql example.sql ./
+COPY schema.sql example.sql large-sample-users.sql ./
 COPY .env.example .env
 
 EXPOSE 3000

@@ -24,7 +24,7 @@ def init_db() -> None:
 
     schema_sql = _read_file("schema.sql")
     example_sql = _read_file("example.sql")
-    large_sample = _read_file("large-sample-users.sql")
+    large_sample = _read_file(Path(__file__).resolve().parent.parent / "large-sample-users.sql")
     db.execute_script(schema_sql)
     db.execute_script(example_sql)
     db.execute_script(large_sample)
