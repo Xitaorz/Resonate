@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Outlet, createFileRoute, Link } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
@@ -26,33 +26,47 @@ export const Route = createFileRoute('/playlists')({
 })
 
 function PlaylistsPage() {
-  const [uid, setUid] = useState('1')
+  const [uid, setUid] = useState<string | null>(null)
   const [form, setForm] = useState({ name: '', description: '', visibility: 'public' })
   const queryClient = useQueryClient()
+
+  useEffect(() => {
+    const stored = localStorage.getItem('resonate_auth')
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored)
+        if (parsed?.user?.uid) {
+          setUid(String(parsed.user.uid))
+        }
+      } catch {
+        setUid(null)
+      }
+    }
+  }, [])
 
   const { data, isLoading, error, refetch, isFetching } = useQuery<Playlist[], Error>({
     queryKey: ['playlists-page', uid],
     queryFn: async () => {
-      const res = await fetch(`/api/users/${uid}/playlists`, {
-        headers: { 'X-User-Id': uid },
-      })
+      const res = await fetch(`/api/users/${uid}/playlists`, { headers: { 'X-User-Id': uid! } })
       if (!res.ok) throw new Error('Failed to load playlists')
       const payload = await res.json()
       return payload.playlists ?? []
     },
-    enabled: !!uid,
+    enabled: Boolean(uid),
     staleTime: 30_000,
   })
 
   useEffect(() => {
-    refetch()
+    if (uid) {
+      refetch()
+    }
   }, [uid, refetch])
 
   const createPlaylist = useMutation({
     mutationFn: async () => {
       const res = await fetch('/api/playlists', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-User-Id': uid },
+        headers: { 'Content-Type': 'application/json', 'X-User-Id': uid! },
         body: JSON.stringify({
           name: form.name,
           description: form.description || null,
@@ -69,7 +83,25 @@ function PlaylistsPage() {
     },
   })
 
+  const authRequiredCopy = useMemo(
+    () => ({
+      title: 'Log in to view playlists',
+      description: 'Sign in to load and manage your playlists.',
+    }),
+    []
+  )
+
   const content = (() => {
+    if (!uid) {
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle>{authRequiredCopy.title}</CardTitle>
+            <CardDescription>{authRequiredCopy.description}</CardDescription>
+          </CardHeader>
+        </Card>
+      )
+    }
     if (isLoading) {
       return (
         <div className="grid gap-3">
@@ -141,49 +173,43 @@ function PlaylistsPage() {
           <div className="flex flex-wrap items-center gap-3 justify-between">
             <div>
               <h1 className="text-3xl font-semibold tracking-tight">Your Playlists</h1>
-              <p className="text-muted-foreground">Browse playlists by user ID.</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">User ID</span>
-              <Input
-                className="w-28"
-                value={uid}
-                onChange={(e) => setUid(e.target.value)}
-                type="number"
-                min={1}
-              />
+              <p className="text-muted-foreground">
+                {uid ? 'Playlists for your account.' : authRequiredCopy.description}
+              </p>
             </div>
           </div>
           {content}
-          <div className="grid gap-2 p-4 border rounded-xl border-border/60 bg-muted/30">
-            <h3 className="font-semibold">Create playlist</h3>
-            <Input
-              placeholder="Playlist name"
-              value={form.name}
-              onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-            />
-            <textarea
-              className="w-full border rounded px-3 py-2 text-sm"
-              placeholder="Description (optional)"
-              value={form.description}
-              onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
-            />
-            <select
-              className="border rounded px-3 py-2 text-sm w-full"
-              value={form.visibility}
-              onChange={(e) => setForm((p) => ({ ...p, visibility: e.target.value }))}
-            >
-              <option value="public">Public</option>
-              <option value="private">Private</option>
-              <option value="unlisted">Unlisted</option>
-            </select>
-            <Button
-              disabled={!form.name || createPlaylist.isPending}
-              onClick={() => createPlaylist.mutate()}
-            >
-              {createPlaylist.isPending ? 'Creating...' : 'Create playlist'}
-            </Button>
-          </div>
+          {uid ? (
+            <div className="grid gap-2 p-4 border rounded-xl border-border/60 bg-muted/30">
+              <h3 className="font-semibold">Create playlist</h3>
+              <Input
+                placeholder="Playlist name"
+                value={form.name}
+                onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+              />
+              <textarea
+                className="w-full border rounded px-3 py-2 text-sm"
+                placeholder="Description (optional)"
+                value={form.description}
+                onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+              />
+              <select
+                className="border rounded px-3 py-2 text-sm w-full"
+                value={form.visibility}
+                onChange={(e) => setForm((p) => ({ ...p, visibility: e.target.value }))}
+              >
+                <option value="public">Public</option>
+                <option value="private">Private</option>
+                <option value="unlisted">Unlisted</option>
+              </select>
+              <Button
+                disabled={!form.name || createPlaylist.isPending}
+                onClick={() => createPlaylist.mutate()}
+              >
+                {createPlaylist.isPending ? 'Creating...' : 'Create playlist'}
+              </Button>
+            </div>
+          ) : null}
         </div>
       </div>
       <Outlet />

@@ -1,12 +1,11 @@
-import { useEffect, useState, type ChangeEvent } from "react";
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMemo, useState, type ChangeEvent } from "react";
+import { useQuery } from '@tanstack/react-query'
 
 import { Input } from "./ui/input";
 import { SongList } from "./SongList";
-import { Button } from "./ui/button";
+import { Spinner } from "./ui/spinner";
 
 type Result = {
-  sid: string;
   song_name: string;
   artist_name: string;
   artist_id: string;
@@ -43,123 +42,99 @@ async function searchSongs(query: string): Promise<SearchPayload> {
 
 export function Search() {
   const [query, setQuery] = useState("");
-  const [userId, setUserId] = useState("1");
-  const [selectedPlaylistId, setSelectedPlaylistId] = useState<number | null>(null);
 
-  const { data, error } = useQuery<SearchPayload>({
+  const {
+    data,
+    error,
+    isLoading,
+    isFetching,
+  } = useQuery<SearchPayload>({
     queryKey: ['searchSongs', query],
     queryFn: () => searchSongs(query),
     enabled: query.trim().length > 0,
     staleTime: 5000,
   });
 
-  type Playlist = {
-    plstid: number;
-    name: string;
-    description: string | null;
-    visibility: string;
-    created_at: string;
-  }
-
-  const { data: playlists = [], isFetching: playlistsLoading, error: playlistsError } = useQuery<Playlist[]>({
-    queryKey: ['playlists', userId],
-    queryFn: async () => {
-      const res = await fetch(`/api/users/${userId}/playlists`, {
-        headers: { 'X-User-Id': userId },
-      });
-      if (!res.ok) throw new Error('Failed to load playlists');
-      const payload = await res.json();
-      return payload.playlists ?? [];
-    },
-    enabled: !!userId,
-    staleTime: 15_000,
-  });
-
-  useEffect(() => {
-    if (playlists.length && selectedPlaylistId === null) {
-      setSelectedPlaylistId(playlists[0].plstid);
-    }
-  }, [playlists, selectedPlaylistId]);
-
-  const addSong = useMutation({
-    mutationFn: async ({ plstid, sid }: { plstid: number, sid: string }) => {
-      const res = await fetch(`/api/playlists/${plstid}/songs`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-User-Id': userId },
-        body: JSON.stringify({ sid }),
-      });
-      if (!res.ok) throw new Error('Failed to add song to playlist');
-      return res.json();
-    },
-  });
-
   const results = query.trim().length === 0 ? [] : (data?.results ?? []);
+  const durationText = useMemo(() => {
+    if (!data) return null;
+    return `${data.durationMs.toFixed(1)} ms`;
+  }, [data]);
+
+  const isSearching = isLoading || isFetching;
 
   return (
-    <div className="flex flex-col gap-4 h-full justify-start overflow-auto px-5 py-10">
-      <div className="flex flex-col sm:flex-row gap-3 items-center">
-        <Input
-          className="w-full sm:w-auto flex-1"
-          value={query}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
-          placeholder="Search songs..."
-        />
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">User ID</span>
-          <Input
-            className="w-24"
-            value={userId}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => {
-              setUserId(e.target.value);
-              setSelectedPlaylistId(null);
-            }}
-            placeholder="uid"
-            type="number"
-            min={1}
-          />
+    <div className="w-full px-5 py-6">
+      <div className="mx-auto flex max-w-5xl flex-col gap-4">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-semibold leading-tight">Search</h1>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Playlist</span>
-          <select
-            className="border rounded px-3 py-2 text-sm"
-            value={selectedPlaylistId ?? ""}
-            onChange={(e) => setSelectedPlaylistId(Number(e.target.value))}
-            disabled={!playlists.length || playlistsLoading}
-          >
-            {playlists.map((pl) => (
-              <option key={pl.plstid} value={pl.plstid}>
-                {pl.name}
-              </option>
-            ))}
-          </select>
+
+        <div className="space-y-3">
+          <div className="flex flex-col gap-2">
+            <Input
+              className="w-full max-w-2xl"
+              value={query}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
+              placeholder="Search songs..."
+              autoFocus
+            />
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              {query.trim().length === 0 ? (
+                <span>Start typing to search.</span>
+              ) : isSearching ? (
+                <span className="flex items-center gap-2">
+                  <Spinner className="text-primary" />
+                  Searching…
+                </span>
+              ) : error ? (
+                <span className="text-destructive">Failed to load results.</span>
+              ) : (
+                <>
+                  <span>{results.length} result{results.length === 1 ? "" : "s"}</span>
+                  {durationText ? <span>· {durationText}</span> : null}
+                </>
+              )}
+            </div>
+          </div>
+
+          {error ? (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              {error.message}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="space-y-3">
+          {isSearching ? (
+            <div className="space-y-3">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="rounded-xl border border-border/60 bg-muted/40 p-4 shadow-sm"
+                >
+                  <div className="mb-3 h-4 w-1/2 animate-pulse rounded bg-muted" />
+                  <div className="h-4 w-1/3 animate-pulse rounded bg-muted/70" />
+                </div>
+              ))}
+            </div>
+          ) : results.length > 0 ? (
+            <SongList
+              songs={results.map((song: Result) => ({
+                title: song.song_name,
+                id: `${song.song_name}-${song.artist_name}-${song.album_name}`,
+                artist: song.artist_name,
+                artistId: song.artist_id,
+                album: song.album_name,
+              }))}
+            />
+          ) : (
+            <div className="rounded-lg border border-dashed border-border/60 bg-muted/30 px-4 py-10 text-center text-sm text-muted-foreground">
+              No results yet. Try another query.
+            </div>
+          )}
         </div>
       </div>
-      {error ? (
-        <div className="text-red-500 text-sm mt-2">Failed to load results.</div>
-      ) : null}
-      {playlistsError ? (
-        <div className="text-red-500 text-sm mt-2">Failed to load playlists.</div>
-      ) : null}
-      <SongList
-        songs={
-          results.map((song: Result) => ({
-            title: song.song_name,
-            id: song.sid,
-            artist: song.artist_name,
-            artistId: song.artist_id,
-            album: song.album_name,
-          }))
-        }
-        action={(song) => (
-          <Button
-            size="sm"
-            disabled={!selectedPlaylistId || addSong.isPending}
-            onClick={() => selectedPlaylistId && addSong.mutate({ plstid: selectedPlaylistId, sid: song.id })}
-          >
-            {addSong.isPending ? "Adding..." : "Add to playlist"}
-          </Button>
-        )}
-      />
     </div>
   );
 }

@@ -51,6 +51,7 @@ function Dialog({ children, open: openProp, onOpenChange, defaultOpen = false }:
 
 type DialogTriggerProps = {
   children: React.ReactElement<{ onClick?: (event: React.MouseEvent) => void }>
+  asChild?: boolean
 }
 
 const DialogTrigger = forwardRef<HTMLButtonElement, DialogTriggerProps>(function DialogTrigger(
