@@ -6,3 +6,4 @@ kagglehub
 pandas
 sqlalchemy
 flask_cors
+APScheduler==3.10.4

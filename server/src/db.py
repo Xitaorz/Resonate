@@ -161,6 +161,11 @@ class DB:
         return list(rows)
 
     def get_weekly_ranking(self) -> List[Dict[str, Any]]:
+        # Refresh snapshot to avoid missing-table issues if event didn’t run
+        try:
+            self.execute_script(self._sql("weekly-ranking-refresh.sql"))
+        except Exception as e:
+            print(f"Weekly snapshot refresh failed: {e}")
         sql = self._sql("show-weekly-ranking.sql")
         conn = self._ensure_conn()
         with conn.cursor() as cur:

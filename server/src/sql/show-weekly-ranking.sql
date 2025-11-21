@@ -1,5 +1,9 @@
-SELECT *
-FROM weekly_fav_rank
+SELECT
+  yearweek,
+  rank_in_week,
+  song_title,
+  album_title,
+  fav_count
+FROM weekly_fav_rank_snapshot
 WHERE yearweek = YEARWEEK(CURDATE(), 3)
-  AND rank_in_week <= 10
-ORDER BY fav_count DESC, rank_in_week;
+ORDER BY rank_in_week;

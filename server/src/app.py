@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import time
+from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask, jsonify, request, g
 from flask_cors import CORS
 
@@ -44,13 +45,33 @@ def create_app() -> Flask:
                     print("Database initialization complete.")
                     import_data()
                     print("Data imported!")
-            # Always ensure weekly view exists (noop if already present)
+            # Ensure weekly view exists
             db.execute_script(load_sql("src/sql/weekly-ranking-view.sql"))
-            print("Weekly ranking view ensured.")
+            # Ensure snapshot is up to date (current week) even if event can't be created
+            db.execute_script(load_sql("src/sql/weekly-ranking-refresh.sql"))
+            print("Weekly ranking snapshot refreshed.")
+            # Try to register weekly event (best effort)
+            try:
+                db.execute_script(load_sql("src/sql/weekly-ranking-event.sql"))
+                print("Weekly ranking event ensured.")
+            except Exception as event_err:
+                print(f"Weekly ranking event setup skipped (permission?): {event_err}")
         finally:
             temp_conn.close()
     except Exception as e:
         print(f"Error: {e}")
+
+    def refresh_weekly_view():
+        try:
+            db.execute_script(load_sql("src/sql/weekly-ranking-refresh.sql"))
+            print("Weekly ranking snapshot refreshed.")
+        except Exception as e:
+            print(f"Weekly view refresh failed: {e}")
+
+    scheduler = BackgroundScheduler(timezone="UTC", daemon=True)
+    # Run every Monday at 00:05 UTC to roll the week snapshot
+    scheduler.add_job(refresh_weekly_view, "cron", day_of_week="mon", hour=0, minute=5)
+    scheduler.start()
     
     @app.before_request
     def before_request():

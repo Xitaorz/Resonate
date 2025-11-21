@@ -25,10 +25,17 @@ def init_db() -> None:
     example_sql = load_sql("example.sql")
     large_sample = load_sql("large-sample-users.sql")
     weekly_view = load_sql("src/sql/weekly-ranking-view.sql")
+    weekly_refresh = load_sql("src/sql/weekly-ranking-refresh.sql")
+    weekly_event = load_sql("src/sql/weekly-ranking-event.sql")
     db.execute_script(schema_sql)
     db.execute_script(example_sql)
     db.execute_script(large_sample)
     db.execute_script(weekly_view)
+    db.execute_script(weekly_refresh)
+    try:
+        db.execute_script(weekly_event)
+    except Exception as event_err:
+        print(f"Skipping weekly event creation (permission?): {event_err}")
 
     print("Database initialized and exampleed.")
 
