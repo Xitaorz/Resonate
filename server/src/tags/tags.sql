@@ -1,10 +1,8 @@
-CREATE TABLE IF NOT EXISTS phys_song_tag (
-  `sid`      VARCHAR(64)  NOT NULL,
-  tag        VARCHAR(32)  NOT NULL,
-  PRIMARY KEY (`sid`, tag),
-  KEY idx_tag (tag)
-);
-
-INSERT INTO phys_song_tag (`sid`, tag)
-SELECT `sid`, tag
-FROM virt_song_tag;
+INSERT INTO tags (tid, name)
+VALUES
+  (1, 'party'),
+  (2, 'relaxing'),
+  (3, 'sad'),
+  (4, 'workout'),
+  (5, 'sleeping'),
+  (6, 'romantic');
