@@ -3,8 +3,7 @@ import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
 type Song = {
-  id: string;
-  sid?: string;
+  sid: string;
   title: string;
   artist: string;
   artistId?: string;
@@ -20,7 +19,7 @@ export function SongList({ songs, action }: SongListProps) {
   return (
     <div className="w-full flex flex-col items-stretch gap-4">
       {songs.map((song) => (
-        <Card key={song.id} className="mb-2 p-4 w-xl">
+        <Card key={song.sid} className="mb-2 p-4 w-xl">
           <div className="flex items-start justify-between gap-4">
             <div>
               <CardTitle>{song.title}</CardTitle>

@@ -332,6 +332,29 @@ def create_app() -> Flask:
             print(f"Recommendations endpoint error: {e}")
             return jsonify({"error": "Failed to fetch recommendations"}), 500
 
+    @app.get("/songs/<sid>/rating")
+    def get_song_rating(sid: str):
+        # Accept uid via header or query param
+        uid_param = request.args.get("uid")
+        header_uid = request.headers.get("X-User-Id")
+        uid_val = header_uid or uid_param
+        try:
+            uid = int(uid_val) if uid_val is not None else None
+        except (TypeError, ValueError):
+            return jsonify({"error": "uid is required and must be an integer"}), 400
+
+        if uid is None:
+            return jsonify({"error": "uid is required"}), 400
+
+        try:
+            rating = db.get_user_song_rating(uid, sid)
+            if not rating:
+                return jsonify({"rating": None})
+            return jsonify({"rating": rating})
+        except Exception as e:
+            print(f"Get song rating error: {e}")
+            return jsonify({"error": "Failed to fetch rating"}), 500
+
     @app.post("/songs/<sid>/rate")
     def rate_song(sid: str):
         payload = request.get_json(silent=True) or {}

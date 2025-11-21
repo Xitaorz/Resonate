@@ -1,4 +1,4 @@
-import { useMemo, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { useMutation, useQuery } from '@tanstack/react-query'
 
 import { Input } from "./ui/input";
@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { useAuth } from "@/hooks/use-auth";
+import { RatingStars } from "./RatingStars";
 
 type Result = {
   sid: string;
@@ -56,6 +57,7 @@ export function Search() {
   const authUid = auth?.user?.uid ?? null;
   const [selectedSong, setSelectedSong] = useState<Result | null>(null);
   const [selectedPlaylist, setSelectedPlaylist] = useState<string>("");
+  const [ratings, setRatings] = useState<Record<string, number>>({});
 
   const {
     data,
@@ -74,6 +76,47 @@ export function Search() {
     if (!data) return null;
     return `${data.durationMs.toFixed(1)} ms`;
   }, [data]);
+
+  const resultsBySid = useMemo(() => {
+    const entries = results.map((song) => [song.sid, song] as const)
+    return Object.fromEntries(entries)
+  }, [results])
+
+  useEffect(() => {
+    if (!authUid || results.length === 0) {
+      setRatings({});
+      return;
+    }
+
+    let cancelled = false;
+    const fetchRatings = async () => {
+      const entries = await Promise.all(
+        results.map(async (song) => {
+          try {
+            const res = await fetch(`/api/songs/${song.sid}/rating`, {
+              headers: { 'X-User-Id': authUid },
+            });
+            const data = await res.json();
+            if (res.ok && data?.rating?.rate_value) {
+              return [song.sid, Number(data.rating.rate_value)] as const;
+            }
+          } catch {
+            // ignore fetch errors per-song
+          }
+          return [song.sid, 0] as const;
+        })
+      );
+      if (!cancelled) {
+        setRatings(Object.fromEntries(entries));
+      }
+    };
+
+    fetchRatings();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authUid, results]);
 
   const {
     data: playlists = [],
@@ -125,6 +168,31 @@ export function Search() {
     onSuccess: () => {
       setSelectedSong(null);
       setSelectedPlaylist("");
+    },
+  });
+
+  const rateSong = useMutation({
+    mutationFn: async ({ sid, rating }: { sid: string; rating: number }) => {
+      if (!authUid) throw new Error("You must be logged in to rate");
+      const res = await fetch(`/api/songs/${sid}/rate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-User-Id": authUid },
+        body: JSON.stringify({ uid: Number(authUid), rate_value: rating }),
+      });
+      if (!res.ok) {
+        let msg = "Failed to rate song";
+        try {
+          const payload = await res.json();
+          msg = payload?.error || msg;
+        } catch {
+          // ignore
+        }
+        throw new Error(msg);
+      }
+      return res.json();
+    },
+    onSuccess: (_res, vars) => {
+      setRatings((prev) => ({ ...prev, [vars.sid]: vars.rating }));
     },
   });
 
@@ -213,35 +281,30 @@ export function Search() {
               songs={results.map((song: Result) => ({
                 id: song.sid,
                 title: song.song_name,
+                id: `${song.song_name}-${song.artist_name}-${song.album_name}`,
                 artist: song.artist_name,
                 artistId: song.artist_id,
                 album: song.album_name,
               }))}
               action={(song) => (
-                <div className="flex flex-col gap-2 items-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={!authUid}
-                    onClick={() => {
-                      const original = results.find((r) => r.sid === song.id);
-                      setSelectedSong(original ?? null);
-                      setSelectedPlaylist("");
-                    }}
-                  >
-                    Add to playlist
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-9 w-9 text-red-500 hover:text-red-600"
-                    onClick={() => favoriteSong.mutate(song.id)}
-                    disabled={!authUid || favoriteSong.isPending}
-                    aria-label="Favorite song"
-                  >
-                    {favoriteSong.isPending ? "…" : "♥"}
-                  </Button>
-                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!authUid}
+                  onClick={() => {
+                    const original = results.find(
+                      (r) =>
+                        r.sid === song.sid ||
+                        (r.song_name === song.title &&
+                          r.artist_name === song.artist &&
+                          r.album_name === song.album)
+                    );
+                    setSelectedSong(original ?? null);
+                    setSelectedPlaylist("");
+                  }}
+                >
+                  Add to playlist
+                </Button>
               )}
             />
           ) : (

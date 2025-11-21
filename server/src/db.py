@@ -216,7 +216,6 @@ class DB:
                     cur.execute(
                         "INSERT INTO ratings (rate_value, comment) VALUES (%s, %s)",
                         (rate_value, comment),
-                        print("inserted")
                     )
                     rid = cur.lastrowid
                     cur.execute(
@@ -240,6 +239,22 @@ class DB:
                 conn.close()
             except Exception:
                 pass
+
+    def get_user_song_rating(self, uid: int, sid: str) -> Optional[Dict[str, Any]]:
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT ur.rid, ur.uid, ur.sid, r.rate_value, r.comment, ur.rated_at
+                FROM user_rates ur
+                JOIN ratings r ON ur.rid = r.rid
+                WHERE ur.uid = %s AND ur.sid = %s
+                LIMIT 1
+                """,
+                (uid, sid),
+            )
+            row = cur.fetchone()
+        return row
 
     def get_weekly_ranking(self) -> List[Dict[str, Any]]:
         # Refresh snapshot to avoid missing-table issues if event didn't run

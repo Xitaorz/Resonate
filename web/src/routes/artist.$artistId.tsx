@@ -52,8 +52,8 @@ function ArtistSongsPage() {
         <div className="text-gray-500">No songs found for this artist.</div>
       ) : (
         <SongList songs={
-          songs.map((song, index) => ({
-            id: `${song.sid}-${index}`,
+          songs.map((song) => ({
+            sid: song.sid,
             title: song.song_title,
             artist: song.artist_name,
             album: song.album_title,

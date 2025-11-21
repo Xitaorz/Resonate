@@ -128,7 +128,7 @@ function WeeklyRankingPage() {
                   className="flex items-center justify-between rounded-xl border border-border/60 px-4 py-3 bg-muted/30"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-white font-semibold">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full from-cyan-500 to-blue-600 text-white font-semibold">
                       {entry.rank_in_week}
                     </div>
                     <div>
