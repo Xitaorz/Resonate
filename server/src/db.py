@@ -123,13 +123,28 @@ class DB:
         return list(rows)
     
     #search for songs, artists, and albums
+    # def search(self, query: str) -> List[Dict[str, Any]]:
+    #     search_pattern = f"%{query}%"
+    #     sql = self._sql("search.sql")
+        
+    #     conn = self._ensure_conn()
+    #     with conn.cursor() as cur:
+    #         cur.execute(sql, (search_pattern, search_pattern, search_pattern))
+    #         rows = cur.fetchall()
+    #     return list(rows)
+
     def search(self, query: str) -> List[Dict[str, Any]]:
         search_pattern = f"%{query}%"
         sql = self._sql("search.sql")
-        
+
         conn = self._ensure_conn()
         with conn.cursor() as cur:
-            cur.execute(sql, (search_pattern, search_pattern, search_pattern))
+            cur.execute(sql, (
+                search_pattern,  # s.name
+                search_pattern,  # a.name
+                search_pattern,  # al.title
+                search_pattern,  # t.name (tag)
+            ))
             rows = cur.fetchall()
         return list(rows)
     

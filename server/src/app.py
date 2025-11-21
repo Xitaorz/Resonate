@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import os
 import time
+
+from django.test import tag
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask, jsonify, request, g
 from flask_cors import CORS
@@ -220,6 +222,7 @@ def create_app() -> Flask:
                 "count": 0,
                 "results": []
             })
+
     
     @app.get("/artist/<artist_id>/songs")
     def get_artist_songs(artist_id: str):
