@@ -142,6 +142,14 @@ class DB:
             cur.execute(sql, (artist_id,))
             rows = cur.fetchall()
         return list(rows)
+
+    def get_song_by_id(self, song_id: str) -> Optional[Dict[str, Any]]:
+        sql = self._sql("get_song_by_id.sql")
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            cur.execute(sql, (song_id,))
+            row = cur.fetchone()
+        return row
     
     #show all tables in the database
     def show_tables(self) -> List[Dict[str, Any]]:

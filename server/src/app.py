@@ -237,6 +237,17 @@ def create_app() -> Flask:
                 "count": 0,
                 "songs": []
             })
+
+    @app.get("/songs/<song_id>")
+    def get_song(song_id: str):
+        try:
+            song = db.get_song_by_id(song_id)
+            if not song:
+                return jsonify({"error": "Song not found"}), 404
+            return jsonify(song)
+        except Exception as e:
+            print(f"Get song error: {e}")
+            return jsonify({"error": "Failed to fetch song"}), 500
     
     @app.get("/tables")
     def show_tables():
