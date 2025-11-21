@@ -28,6 +28,7 @@ def init_db() -> None:
     weekly_view = load_sql("src/sql/weekly-ranking-view.sql")
     weekly_refresh = load_sql("src/sql/weekly-ranking-refresh.sql")
     weekly_event = load_sql("src/sql/weekly-ranking-event.sql")
+    virtual_tags = load_sql("src/sql/virtual_tags.sql")
 
     db.execute_script(schema_sql)
     db.execute_script(tags_sql)       # Ensure tag rows exist before seeding song_tag
@@ -35,6 +36,8 @@ def init_db() -> None:
     db.execute_script(large_sample)
     db.execute_script(weekly_view)
     db.execute_script(weekly_refresh)
+    db.execute_script(virtual_tags)
+    
     try:
         db.execute_script(weekly_event)
     except Exception as event_err:
