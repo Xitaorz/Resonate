@@ -260,6 +260,19 @@ def create_app() -> Flask:
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
+    @app.get("/recommendations/<int:uid>")
+    def recommendations(uid: int):
+        try:
+            recs = db.get_recommendations(uid, 10)
+            return jsonify({
+                "uid": uid,
+                "count": len(recs),
+                "recommendations": recs
+            })
+        except Exception as e:
+            print(f"Recommendations endpoint error: {e}")
+            return jsonify({"error": "Failed to fetch recommendations"}), 500
+
     @app.get("/weekly-ranking")
     def weekly_ranking():
         try:

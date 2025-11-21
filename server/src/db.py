@@ -161,6 +161,15 @@ class DB:
             rows = cur.fetchall()
         return list(rows)
 
+    def get_recommendations(self, uid: int, limit: int = 10) -> List[Dict[str, Any]]:
+        sql = self._sql("recommendations.sql")
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            params = {"uid": uid, "limit": limit}
+            cur.execute(sql, params)
+            rows = cur.fetchall()
+        return list(rows)
+
     def get_weekly_ranking(self) -> List[Dict[str, Any]]:
         # Refresh snapshot to avoid missing-table issues if event didn’t run
         try:
