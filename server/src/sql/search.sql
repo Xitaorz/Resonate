@@ -17,7 +17,7 @@
 -- LIMIT 100;
 
 SELECT DISTINCT
-    s.sid          AS sid,
+    s.sid          AS `sid`,
     s.name         AS song_name,
     a.name         AS artist_name,
     a.artid        AS artist_id,
