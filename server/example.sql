@@ -122,15 +122,3 @@ VALUES
 ON DUPLICATE KEY UPDATE
   rate_value = VALUES(rate_value),
   comment = VALUES(comment);
-
-INSERT INTO user_rates (rid, uid, sid, rated_at)
-VALUES
-  (1, 1, 'SNG001', '2024-04-01 09:15:00'),
-  (2, 2, 'SNG002', '2024-04-02 10:15:00'),
-  (3, 2, 'SNG003', '2024-04-02 10:20:00'),
-  (4, 1, 'SNG002', '2024-04-03 14:00:00'),
-  (5, 2, 'SNG001', '2024-04-04 09:30:00')
-ON DUPLICATE KEY UPDATE
-  uid = VALUES(uid),
-  sid = VALUES(sid),
-  rated_at = VALUES(rated_at);

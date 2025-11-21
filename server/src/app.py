@@ -94,6 +94,43 @@ def create_app() -> Flask:
             return jsonify({"db": "ok"})
         return jsonify({"db": "down"}), 500
 
+    @app.post("/auth/signup")
+    def signup():
+        payload = request.get_json(silent=True) or {}
+        username = (payload.get("username") or "").strip()
+        email = (payload.get("email") or "").strip().lower()
+        password = payload.get("password") or ""
+
+        if not username or not email or not password:
+            return jsonify({"error": "username, email, and password are required"}), 400
+
+        try:
+            user = db.create_user(username=username, email=email, password=password)
+            return jsonify({"user": user}), 201
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        except Exception as exc:
+            print(f"Signup error: {exc}")
+            return jsonify({"error": "Failed to create user"}), 500
+
+    @app.post("/auth/login")
+    def login():
+        payload = request.get_json(silent=True) or {}
+        email = (payload.get("email") or "").strip().lower()
+        password = payload.get("password") or ""
+
+        if not email or not password:
+            return jsonify({"error": "email and password are required"}), 400
+
+        try:
+            user = db.authenticate_user(email=email, password=password)
+            if not user:
+                return jsonify({"error": "Invalid email or password"}), 401
+            return jsonify({"user": user})
+        except Exception as exc:
+            print(f"Login error: {exc}")
+            return jsonify({"error": "Failed to login"}), 500
+
     @app.get("/users")
     def list_users():
         try:

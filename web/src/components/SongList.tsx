@@ -17,7 +17,7 @@ interface SongListProps {
 
 export function SongList({ songs, action }: SongListProps) {
   return (
-    <div className="w-full flex flex-col items-center gap-5 m-5">
+    <div className="w-full flex flex-col items-stretch gap-4">
       {songs.map((song) => (
         <Card key={song.id} className="mb-2 p-4 w-xl">
           <div className="flex items-start justify-between gap-4">

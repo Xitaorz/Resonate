@@ -14,11 +14,31 @@ type Result = {
   album_name: string;
 };
 
-async function searchSongs(query: string): Promise<Result[]> {
+type SearchPayload = {
+  results: Result[];
+  durationMs: number;
+  query: string;
+};
+
+async function searchSongs(query: string): Promise<SearchPayload> {
+  const started = performance.now();
   const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-  const data = await res.json();
-  console.log(data.results)
-  return data.results;
+  const elapsed = performance.now() - started;
+
+  let data: any = {};
+  try {
+    data = await res.json();
+  } catch {
+    data = {};
+  }
+
+  if (!res.ok) {
+    const message = typeof data?.error === "string" ? data.error : "Failed to load results";
+    throw new Error(message);
+  }
+
+  const results = Array.isArray(data?.results) ? data.results : [];
+  return { results, durationMs: elapsed, query };
 }
 
 export function Search() {
@@ -26,10 +46,10 @@ export function Search() {
   const [userId, setUserId] = useState("1");
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<number | null>(null);
 
-  const { data, error } = useQuery<Result[]>({
+  const { data, error } = useQuery<SearchPayload>({
     queryKey: ['searchSongs', query],
     queryFn: () => searchSongs(query),
-    enabled: query.length > 0,
+    enabled: query.trim().length > 0,
     staleTime: 5000,
   });
 
@@ -73,7 +93,7 @@ export function Search() {
     },
   });
 
-  const results = query.length === 0 ? [] : (data ?? []);
+  const results = query.trim().length === 0 ? [] : (data?.results ?? []);
 
   return (
     <div className="flex flex-col gap-4 h-full justify-start overflow-auto px-5 py-10">

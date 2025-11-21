@@ -9,6 +9,7 @@ import pymysql
 from dotenv import load_dotenv
 from pymysql.cursors import DictCursor
 from sqlalchemy import create_engine
+from werkzeug.security import generate_password_hash, check_password_hash
 
 from .tool import load_sql
 
@@ -219,6 +220,7 @@ class DB:
             cur.execute(sql, (plstid,))
             rows = cur.fetchall()
         return list(rows)
+    
     def get_user_profile(self, uid: int) -> Optional[Dict[str, Any]]:
         conn = self._ensure_conn()
         with conn.cursor() as cur:
@@ -303,6 +305,47 @@ class DB:
         if updated is None:
             raise ValueError("User not found")
         return updated
+
+    def get_user_by_email(self, email: str) -> Optional[Dict[str, Any]]:
+        sql = self._sql("get_user_by_email.sql")
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            cur.execute(sql, (email,))
+            row = cur.fetchone()
+        return row
+
+
+    def create_user(self, username: str, email: str, password: str) -> Dict[str, Any]:
+        if not username or not email or not password:
+            raise ValueError("username, email, and password are required")
+
+        password_hash = generate_password_hash(password)
+        insert_sql = self._sql("insert_user.sql")
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            try:
+                cur.execute(insert_sql, (username, email, password_hash))
+            except pymysql.err.IntegrityError as exc:
+                raise ValueError("User with this email already exists") from exc
+
+            new_uid = cur.lastrowid
+
+        new_user = self.get_user_profile(new_uid)
+        if new_user is None:
+            raise ValueError("Failed to create user")
+        return new_user
+
+    def authenticate_user(self, email: str, password: str) -> Optional[Dict[str, Any]]:
+        user_row = self.get_user_by_email(email)
+        if not user_row:
+            return None
+        stored_hash = user_row.get("password_hash")
+        if not stored_hash or not password:
+            return None
+        if not check_password_hash(stored_hash, password):
+            return None
+        user_row.pop("password_hash", None)
+        return user_row
 
 
     def ping(self) -> bool:
