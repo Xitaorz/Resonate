@@ -1,6 +1,6 @@
 import { Card, CardContent, CardTitle } from "./ui/card";
 import { Link } from "@tanstack/react-router";
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 
 type Song = {
   id: string;
