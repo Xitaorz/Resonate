@@ -263,7 +263,6 @@ def create_app() -> Flask:
     @app.get("/weekly-ranking")
     def weekly_ranking():
         try:
-            db.ensure_weekly_ranking_view()
             rankings = db.get_weekly_ranking()
             return jsonify({
                 "count": len(rankings),
