@@ -56,7 +56,7 @@ class DB:
         }
         self.connection_string = f"mysql+pymysql://{self._config['user']}:{self._config['password']}@{self._config['host']}:{self._config['port']}/{self._config['database']}"
 
-    def get_connection(self) -> pymysql.connections.Connection:
+    def get_connection(self, autocommit: bool = True) -> pymysql.connections.Connection:
         if not self._config:
             raise RuntimeError("DB not initialized. Call connect() first.")
         
@@ -67,7 +67,7 @@ class DB:
             password=self._config['password'],
             database=self._config['database'],
             cursorclass=DictCursor,
-            autocommit=True,
+            autocommit=autocommit,
         )
 
     def _ensure_conn(self) -> pymysql.connections.Connection:
@@ -167,6 +167,91 @@ class DB:
             cur.execute(sql)
             rows = cur.fetchall()
         return list(rows)
+    def get_user_profile(self, uid: int) -> Optional[Dict[str, Any]]:
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT uid, username, email, gender, age, street, city, province, mbti, created_at, updated_at
+                FROM users
+                WHERE uid = %s
+                """,
+                (uid,)
+            )
+            user_row = cur.fetchone()
+            if not user_row:
+                return None
+
+            cur.execute(
+                "SELECT hobby FROM user_hobbies WHERE uid = %s ORDER BY hobby ASC",
+                (uid,)
+            )
+            hobbies = [row["hobby"] for row in cur.fetchall()]
+            user_row["hobbies"] = hobbies
+            return user_row
+
+    def update_user_profile(
+        self,
+        uid: int,
+        user_fields: Dict[str, Any],
+        hobbies: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
+        conn = self._ensure_conn()
+        try:
+            original_autocommit = conn.get_autocommit()
+        except Exception:
+            original_autocommit = True
+
+        try:
+            from flask import has_app_context
+            close_after = not has_app_context()
+        except Exception:
+            close_after = True
+
+        try:
+            conn.autocommit(False)
+            with conn.cursor() as cur:
+                cur.execute("SELECT uid FROM users WHERE uid = %s FOR UPDATE", (uid,))
+                if cur.fetchone() is None:
+                    raise ValueError("User not found")
+
+                if user_fields:
+                    set_clause = ", ".join(f"{col} = %s" for col in user_fields.keys())
+                    values = list(user_fields.values()) + [uid]
+                    cur.execute(f"UPDATE users SET {set_clause} WHERE uid = %s", values)
+
+                if hobbies is not None:
+                    cur.execute("DELETE FROM user_hobbies WHERE uid = %s", (uid,))
+                    if hobbies:
+                        hobby_rows = [(uid, hobby) for hobby in hobbies]
+                        cur.executemany(
+                            "INSERT INTO user_hobbies (uid, hobby) VALUES (%s, %s)",
+                            hobby_rows
+                        )
+
+            conn.commit()
+        except Exception as exc:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            raise exc
+        finally:
+            try:
+                conn.autocommit(original_autocommit)
+            except Exception:
+                pass
+            if close_after:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+
+        updated = self.get_user_profile(uid)
+        if updated is None:
+            raise ValueError("User not found")
+        return updated
+
 
     def ping(self) -> bool:
         try:
