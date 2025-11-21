@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { useMemo, useState, type ChangeEvent } from "react";
 import { useMutation, useQuery } from '@tanstack/react-query'
 
 import { Input } from "./ui/input";
@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
+import { useAuth } from "@/hooks/use-auth";
 
 type Result = {
   sid: string;
@@ -51,7 +52,8 @@ async function searchSongs(query: string): Promise<SearchPayload> {
 
 export function Search() {
   const [query, setQuery] = useState("");
-  const [authUid, setAuthUid] = useState<string | null>(null);
+  const auth = useAuth();
+  const authUid = auth?.user?.uid ?? null;
   const [selectedSong, setSelectedSong] = useState<Result | null>(null);
   const [selectedPlaylist, setSelectedPlaylist] = useState<string>("");
 
@@ -72,20 +74,6 @@ export function Search() {
     if (!data) return null;
     return `${data.durationMs.toFixed(1)} ms`;
   }, [data]);
-
-  useEffect(() => {
-    const stored = localStorage.getItem("resonate_auth");
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        if (parsed?.user?.uid) {
-          setAuthUid(String(parsed.user.uid));
-        }
-      } catch {
-        setAuthUid(null);
-      }
-    }
-  }, []);
 
   const {
     data: playlists = [],

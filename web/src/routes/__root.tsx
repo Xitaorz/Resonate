@@ -20,18 +20,14 @@ import {
 } from '@/components/ui/sidebar'
 import { Dialog, DialogTrigger } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-
-type AuthUser = {
-  uid: string
-  username?: string
-  email?: string
-}
+import { useAuth } from '@/hooks/use-auth'
 
 const LoginDialog = lazy(() => import('@/components/auth/LoginDialog'))
 const SignupDialog = lazy(() => import('@/components/auth/SignupDialog'))
 
 export const Route = createRootRoute({
   component: () => {
+    const initialAuth = useAuth()
     const pathname = useRouterState({
       select: (state) => state.location.pathname,
     })
@@ -39,7 +35,7 @@ export const Route = createRootRoute({
     const [username, setUsername] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
-    const [auth, setAuth] = useState<{ user: AuthUser; token: string } | null>(null)
+    const [auth, setAuth] = useState(initialAuth)
     const [authError, setAuthError] = useState<string | null>(null)
     const [loginOpen, setLoginOpen] = useState(false)
     const [signupOpen, setSignupOpen] = useState(false)
