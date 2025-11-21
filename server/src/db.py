@@ -336,7 +336,17 @@ class DB:
             )
             hobbies = [row["hobby"] for row in cur.fetchall()]
             user_row["hobbies"] = hobbies
+            vip_row = self.get_vip_status(uid)
+            user_row["isvip"] = 1 if vip_row else 0
             return user_row
+
+    def get_vip_status(self, uid: int) -> Optional[Dict[str, Any]]:
+        sql = self._sql("get_vip_status.sql")
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            cur.execute(sql, (uid,))
+            row = cur.fetchone()
+        return row
 
     def update_user_profile(
         self,
@@ -407,6 +417,53 @@ class DB:
             cur.execute(sql, (email,))
             row = cur.fetchone()
         return row
+
+    def upsert_vip_user(self, uid: int, special_effect: bool = True) -> Dict[str, Any]:
+        conn = self._ensure_conn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT uid FROM users WHERE uid = %s", (uid,))
+                if cur.fetchone() is None:
+                    raise ValueError("User not found")
+
+                # Detect available columns to avoid referencing missing fields
+                cur.execute("SHOW COLUMNS FROM vip_users")
+                vip_columns = {row["Field"] for row in cur.fetchall()}
+
+                insert_cols = ["uid"]
+                insert_vals = [uid]
+                update_clauses = []
+
+                if "start_date" in vip_columns:
+                    insert_cols.append("start_date")
+                    insert_vals.append("3000-01-01")
+                    update_clauses.append("start_date = VALUES(start_date)")
+                if "end_date" in vip_columns:
+                    insert_cols.append("end_date")
+                    insert_vals.append("3000-01-01")
+                    update_clauses.append("end_date = VALUES(end_date)")
+                if "special_effect" in vip_columns:
+                    insert_cols.append("special_effect")
+                    insert_vals.append(1 if special_effect else 0)
+                    update_clauses.append("special_effect = VALUES(special_effect)")
+
+                placeholders = ", ".join(["%s"] * len(insert_cols))
+                columns_clause = ", ".join(insert_cols)
+                update_clause = ", ".join(update_clauses) if update_clauses else "uid = uid"
+
+                dynamic_sql = f"""
+                INSERT INTO vip_users ({columns_clause})
+                VALUES ({placeholders})
+                ON DUPLICATE KEY UPDATE {update_clause}
+                """
+                cur.execute(dynamic_sql, insert_vals)
+        except pymysql.err.IntegrityError as exc:
+            raise ValueError("Could not promote user to VIP") from exc
+
+        vip_row = self.get_vip_status(uid)
+        if vip_row is None:
+            raise ValueError("Failed to fetch VIP status after update")
+        return vip_row
 
 
     def create_user(self, username: str, email: str, password: str) -> Dict[str, Any]:

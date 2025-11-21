@@ -181,6 +181,19 @@ def create_app() -> Flask:
             print(f"Get user endpoint error: {e}")
             return jsonify({"error": "Failed to fetch user profile"}), 500
 
+    @app.post("/users/<int:uid>/vip")
+    def make_user_vip(uid: int):
+        try:
+            db.upsert_vip_user(uid, special_effect=True)
+            return jsonify({"isvip": 1}), 201
+        except ValueError as e:
+            if "not found" in str(e).lower():
+                return jsonify({"error": str(e)}), 404
+            return jsonify({"error": str(e)}), 400
+        except Exception as e:
+            print(f"VIP promotion error: {e}")
+            return jsonify({"error": "Failed to promote user to VIP"}), 500
+
     @app.put("/users/<int:uid>")
     def update_user(uid: int):
         payload = request.get_json(silent=True) or {}
@@ -222,6 +235,8 @@ def create_app() -> Flask:
 
         try:
             updated_user = db.update_user_profile(uid, user_fields, hobbies)
+            vip_row = db.get_vip_status(uid)
+            updated_user["isvip"] = 1 if vip_row else 0
             return jsonify(updated_user)
         except ValueError as e:
             if "not found" in str(e).lower():
