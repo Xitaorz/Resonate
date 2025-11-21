@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import os
 import time
+from datetime import datetime, timedelta, timezone
+
+import jwt
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask, jsonify, request, g
 from flask_cors import CORS
@@ -9,6 +12,21 @@ from flask_cors import CORS
 from .db import get_db, DB
 from .manage import import_data, init_db
 from .tool import load_sql
+
+JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret-change-me")
+JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
+JWT_TTL_MINUTES = int(os.getenv("JWT_TTL_MINUTES", "60"))
+
+# Simple access token generator
+def _make_access_token(user: dict) -> str:
+    now = datetime.now(timezone.utc)
+    payload = {
+        "sub": str(user.get("uid")),
+        "email": user.get("email"),
+        "iat": int(now.timestamp()),
+        "exp": int((now + timedelta(minutes=JWT_TTL_MINUTES)).timestamp()),
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 
 def create_app() -> Flask:
@@ -106,7 +124,8 @@ def create_app() -> Flask:
 
         try:
             user = db.create_user(username=username, email=email, password=password)
-            return jsonify({"user": user}), 201
+            token = _make_access_token(user)
+            return jsonify({"user": user, "token": token}), 201
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400
         except Exception as exc:
@@ -126,7 +145,8 @@ def create_app() -> Flask:
             user = db.authenticate_user(email=email, password=password)
             if not user:
                 return jsonify({"error": "Invalid email or password"}), 401
-            return jsonify({"user": user})
+            token = _make_access_token(user)
+            return jsonify({"user": user, "token": token})
         except Exception as exc:
             print(f"Login error: {exc}")
             return jsonify({"error": "Failed to login"}), 500

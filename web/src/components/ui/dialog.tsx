@@ -50,7 +50,7 @@ function Dialog({ children, open: openProp, onOpenChange, defaultOpen = false }:
 }
 
 type DialogTriggerProps = {
-  children: React.ReactElement
+  children: React.ReactElement<{ onClick?: (event: React.MouseEvent) => void }>
 }
 
 const DialogTrigger = forwardRef<HTMLButtonElement, DialogTriggerProps>(function DialogTrigger(
@@ -58,9 +58,12 @@ const DialogTrigger = forwardRef<HTMLButtonElement, DialogTriggerProps>(function
   _ref
 ) {
   const { setOpen } = useDialogContext('DialogTrigger')
-  return React.cloneElement(children, {
+  const child = React.Children.only(children) as React.ReactElement<{
+    onClick?: (event: React.MouseEvent) => void
+  }>
+  return React.cloneElement(child, {
     onClick: (event: React.MouseEvent) => {
-      children.props.onClick?.(event)
+      child.props.onClick?.(event)
       if (!event.defaultPrevented) {
         setOpen(true)
       }
@@ -168,7 +171,7 @@ const DialogDescription = forwardRef<HTMLParagraphElement, DialogDescriptionProp
 )
 
 type DialogCloseProps = {
-  children: React.ReactElement
+  children: React.ReactElement<{ onClick?: (event: React.MouseEvent) => void }>
 }
 
 const DialogClose = forwardRef<HTMLButtonElement, DialogCloseProps>(function DialogClose(
@@ -176,9 +179,12 @@ const DialogClose = forwardRef<HTMLButtonElement, DialogCloseProps>(function Dia
   _ref
 ) {
   const { setOpen } = useDialogContext('DialogClose')
-  return React.cloneElement(children, {
+  const child = React.Children.only(children) as React.ReactElement<{
+    onClick?: (event: React.MouseEvent) => void
+  }>
+  return React.cloneElement(child, {
     onClick: (event: React.MouseEvent) => {
-      children.props.onClick?.(event)
+      child.props.onClick?.(event)
       if (!event.defaultPrevented) {
         setOpen(false)
       }

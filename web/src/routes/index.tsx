@@ -7,7 +7,7 @@ export const Route = createFileRoute('/')({
 
 function App() {
   return (
-    <div className="min-h-screen px-4 py-8">
+    <div className="px-4 py-8 overscroll-none">
       <Search />
     </div>
   )
