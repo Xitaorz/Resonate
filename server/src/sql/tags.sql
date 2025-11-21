@@ -5,4 +5,6 @@ VALUES
   (3, 'sad'),
   (4, 'workout'),
   (5, 'sleeping'),
-  (6, 'romantic');
+  (6, 'romantic')
+ON DUPLICATE KEY UPDATE
+  name = VALUES(name);

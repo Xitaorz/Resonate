@@ -64,13 +64,6 @@ ON DUPLICATE KEY UPDATE
   disc_no = VALUES(disc_no),
   track_no = VALUES(track_no);
 
-INSERT INTO tags (tid, name)
-VALUES
-  (1, 'chill'),
-  (2, 'focus'),
-  (3, 'energy')
-ON DUPLICATE KEY UPDATE
-  name = VALUES(name);
 
 INSERT INTO song_tag (sid, tid)
 VALUES

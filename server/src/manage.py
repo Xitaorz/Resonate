@@ -22,12 +22,15 @@ def init_db() -> None:
     db: DB = get_db()
 
     schema_sql = load_sql("schema.sql")
+    tags_sql = load_sql("src/sql/tags.sql")
     example_sql = load_sql("example.sql")
     large_sample = load_sql("large-sample-users.sql")
     weekly_view = load_sql("src/sql/weekly-ranking-view.sql")
     weekly_refresh = load_sql("src/sql/weekly-ranking-refresh.sql")
     weekly_event = load_sql("src/sql/weekly-ranking-event.sql")
+
     db.execute_script(schema_sql)
+    db.execute_script(tags_sql)       # Ensure tag rows exist before seeding song_tag
     db.execute_script(example_sql)
     db.execute_script(large_sample)
     db.execute_script(weekly_view)

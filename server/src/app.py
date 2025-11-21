@@ -39,12 +39,12 @@ def create_app() -> Flask:
         temp_conn = db.get_connection()
         try:
             with temp_conn.cursor() as cur:
-                cur.execute("SHOW TABLES LIKE 'users'")
-                if not cur.fetchone():
-                    init_db()
-                    print("Database initialization complete.")
-                    import_data()
-                    print("Data imported!")
+                #cur.execute("SHOW TABLES LIKE 'users'")
+                #if not cur.fetchone():
+                init_db()
+                print("Database initialization complete.")
+                import_data()
+                print("Data imported!")
             # Ensure weekly view exists
             db.execute_script(load_sql("src/sql/weekly-ranking-view.sql"))
             # Ensure snapshot is up to date (current week) even if event can't be created

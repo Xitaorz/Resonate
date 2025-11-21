@@ -177,7 +177,6 @@ CREATE TABLE IF NOT EXISTS user_follow_playlist (
 );
 
 -- indexes 
-CREATE INDEX idx_album_owned_by_artist_artid ON album_owned_by_artist(artid);
 CREATE INDEX idx_album_owned_by_artist_alid  ON album_owned_by_artist(alid);
 
 CREATE INDEX idx_album_song_alid_trackno     ON album_song(alid, track_no);
