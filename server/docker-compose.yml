@@ -30,6 +30,7 @@ services:
       MYSQL_PASSWORD: app_password
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./advance-features/authz.sql:/docker-entrypoint-initdb.d/20-authz.sql:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 5s

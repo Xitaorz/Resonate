@@ -102,6 +102,17 @@ def create_app() -> Flask:
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
+    @app.get("/users/<int:uid>")
+    def get_user(uid: int):
+        try:
+            user = db.get_user_profile(uid)
+            if not user:
+                return jsonify({"error": "User not found"}), 404
+            return jsonify(user)
+        except Exception as e:
+            print(f"Get user endpoint error: {e}")
+            return jsonify({"error": "Failed to fetch user profile"}), 500
+
     @app.put("/users/<int:uid>")
     def update_user(uid: int):
         payload = request.get_json(silent=True) or {}

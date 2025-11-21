@@ -40,14 +40,11 @@ def init_db() -> None:
     print("Database initialized and exampleed.")
 
 def import_data() -> None: 
+    # https://github.com/Kaggle/kagglehub/blob/main/README.md#kaggledatasetadapterpandas
     df = kagglehub.dataset_load(
         KaggleDatasetAdapter.PANDAS,
         "rodolfofigueroa/spotify-12m-songs",
         "tracks_features.csv",
-        # Provide any additional arguments like 
-        # sql_query or pandas_kwargs. See the 
-        # documenation for more information:
-        # https://github.com/Kaggle/kagglehub/blob/main/README.md#kaggledatasetadapterpandas
     )
     db: DB = get_db()
 
