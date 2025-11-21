@@ -1,6 +1,7 @@
-import { Suspense, lazy, useState } from 'react'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Pencil } from 'lucide-react'
 
 import {
   Card,
@@ -10,9 +11,20 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from '@/components/ui/dialog'
 
 import { UserLookupForm } from '@/components/user-profile/UserLookupForm'
 import { UserProfileSkeleton } from '@/components/user-profile/UserProfileSkeleton'
+import { UserProfileForm, type UpdateUserInput } from '@/components/user-profile/UserProfileForm'
 
 type UserProfile = {
   uid: number
@@ -47,6 +59,32 @@ const fetchUserProfile = async (uid: string): Promise<UserProfile> => {
   return body as UserProfile
 }
 
+type UpdateUserPayload = UpdateUserInput
+
+const updateUserProfile = async (uid: string, payload: UpdateUserPayload): Promise<UserProfile> => {
+  const res = await fetch(`/api/users/${uid}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+
+  let body: any = {}
+  try {
+    body = await res.json()
+  } catch {
+    body = {}
+  }
+
+  if (!res.ok || body?.error) {
+    const message = typeof body?.error === 'string' ? body.error : `Failed to update user ${uid}`
+    throw new Error(message)
+  }
+
+  return body as UserProfile
+}
+
 export const Route = createFileRoute('/users/$uid')({
   component: UserProfilePage,
 })
@@ -57,6 +95,14 @@ function UserProfilePage() {
   const { uid } = Route.useParams()
   const navigate = useNavigate()
   const [userIdInput, setUserIdInput] = useState(uid)
+  const [lastSaved, setLastSaved] = useState<Date | null>(null)
+  const [editOpen, setEditOpen] = useState(false)
+  const queryClient = useQueryClient()
+
+  useEffect(() => {
+    setLastSaved(null)
+    setEditOpen(false)
+  }, [uid])
 
   const {
     data,
@@ -68,6 +114,15 @@ function UserProfilePage() {
     queryKey: ['userProfile', uid],
     queryFn: () => fetchUserProfile(uid),
     staleTime: 10_000,
+  })
+
+  const updateMutation = useMutation<UserProfile, Error, UpdateUserPayload>({
+    mutationFn: (payload) => updateUserProfile(uid, payload),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['userProfile', uid], updated)
+      setLastSaved(new Date())
+      setEditOpen(false)
+    },
   })
 
   const handleSubmit = () => {
@@ -107,15 +162,56 @@ function UserProfilePage() {
               <CardDescription>{error.message}</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="destructive" onClick={() => refetch()}>
-                Try again
-              </Button>
+              <UserLookupForm
+                value={userIdInput}
+                onChange={setUserIdInput}
+                onSubmit={handleSubmit}
+                onRefresh={() => refetch()}
+                canSubmit={Boolean(userIdInput.trim())}
+                isRefreshing={isFetching}
+              />
             </CardContent>
           </Card>
         ) : data ? (
-          <Suspense fallback={<UserProfileSkeleton uid={uid} />}>
-            <UserProfileContent profile={data} />
-          </Suspense>
+          <Dialog open={editOpen} onOpenChange={setEditOpen}>
+            <Suspense fallback={<UserProfileSkeleton uid={uid} />}>
+              <UserProfileContent
+                profile={data}
+                footerSlot={
+                  <DialogTrigger>
+                    <Button variant="outline" className="gap-2">
+                      <Pencil className="size-4" />
+                      Edit profile
+                    </Button>
+                  </DialogTrigger>
+                }
+              />
+            </Suspense>
+
+            <DialogContent>
+              <div className="px-6 py-5">
+                <DialogHeader className="mb-4">
+                  <DialogTitle>Edit profile</DialogTitle>
+                  <DialogDescription>Update profile details and hobbies.</DialogDescription>
+                </DialogHeader>
+                <UserProfileForm
+                  profile={data}
+                  onSubmit={(payload) => updateMutation.mutate(payload)}
+                  isSubmitting={updateMutation.isPending}
+                  errorMessage={updateMutation.error?.message}
+                  lastSaved={lastSaved}
+                />
+                <DialogFooter className="justify-between pt-6">
+                  <span className="text-sm text-muted-foreground">
+                    Tip: hobbies are comma-separated.
+                  </span>
+                  <DialogClose>
+                    <Button variant="ghost">Cancel</Button>
+                  </DialogClose>
+                </DialogFooter>
+              </div>
+            </DialogContent>
+          </Dialog>
         ) : null}
       </div>
     </div>

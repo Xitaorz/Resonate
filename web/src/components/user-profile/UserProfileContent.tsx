@@ -2,6 +2,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
@@ -23,6 +24,7 @@ type UserProfile = {
 
 type Props = {
   profile: UserProfile
+  footerSlot?: React.ReactNode
 }
 
 function formatDate(value?: string | null): string {
@@ -42,7 +44,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-export default function UserProfileContent({ profile }: Props) {
+export default function UserProfileContent({ profile, footerSlot }: Props) {
   const location = (() => {
     const parts = [profile.city, profile.province].filter(Boolean) as string[]
     return parts.length ? parts.join(', ') : '—'
@@ -76,6 +78,7 @@ export default function UserProfileContent({ profile }: Props) {
             <InfoRow label="Province" value={profile.province || '—'} />
           </div>
         </CardContent>
+        {footerSlot ? <CardFooter>{footerSlot}</CardFooter> : null}
       </Card>
 
       <Card>
