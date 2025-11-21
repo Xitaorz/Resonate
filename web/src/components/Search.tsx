@@ -128,6 +128,29 @@ export function Search() {
     },
   });
 
+  const favoriteSong = useMutation({
+    mutationFn: async (sid: string) => {
+      if (!authUid) throw new Error("Login required");
+      const res = await fetch("/api/favorites", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-User-Id": authUid.toString(),
+        },
+        body: JSON.stringify({ sid }),
+      });
+      if (!res.ok) {
+        let msg = "Failed to favorite song";
+        try {
+          const payload = await res.json();
+          msg = payload?.error || msg;
+        } catch { /* ignore */ }
+        throw new Error(msg);
+      }
+      return res.json();
+    },
+  });
+
   const isSearching = isLoading || isFetching;
 
   return (
@@ -188,32 +211,37 @@ export function Search() {
           ) : results.length > 0 ? (
             <SongList
               songs={results.map((song: Result) => ({
-                sid: song.sid,
+                id: song.sid,
                 title: song.song_name,
-                id: `${song.song_name}-${song.artist_name}-${song.album_name}`,
                 artist: song.artist_name,
                 artistId: song.artist_id,
                 album: song.album_name,
               }))}
               action={(song) => (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!authUid}
-                  onClick={() => {
-                    const original = results.find(
-                      (r) =>
-                        r.sid === song.sid ||
-                        (r.song_name === song.title &&
-                          r.artist_name === song.artist &&
-                          r.album_name === song.album)
-                    );
-                    setSelectedSong(original ?? null);
-                    setSelectedPlaylist("");
-                  }}
-                >
-                  Add to playlist
-                </Button>
+                <div className="flex flex-col gap-2 items-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!authUid}
+                    onClick={() => {
+                      const original = results.find((r) => r.sid === song.id);
+                      setSelectedSong(original ?? null);
+                      setSelectedPlaylist("");
+                    }}
+                  >
+                    Add to playlist
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-9 w-9 text-red-500 hover:text-red-600"
+                    onClick={() => favoriteSong.mutate(song.id)}
+                    disabled={!authUid || favoriteSong.isPending}
+                    aria-label="Favorite song"
+                  >
+                    {favoriteSong.isPending ? "…" : "♥"}
+                  </Button>
+                </div>
               )}
             />
           ) : (

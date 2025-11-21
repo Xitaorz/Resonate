@@ -300,6 +300,20 @@ class DB:
             cur.execute(sql, (plstid,))
             rows = cur.fetchall()
         return list(rows)
+
+    def favorite_song(self, uid: int, sid: str) -> None:
+        sql = self._sql("favorite_song.sql")
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            cur.execute(sql, (uid, sid))
+
+    def list_favorites(self, uid: int) -> List[Dict[str, Any]]:
+        sql = self._sql("list_favorites.sql")
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            cur.execute(sql, (uid,))
+            rows = cur.fetchall()
+        return list(rows)
     
     def get_user_profile(self, uid: int) -> Optional[Dict[str, Any]]:
         conn = self._ensure_conn()
