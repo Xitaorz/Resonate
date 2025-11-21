@@ -1,7 +1,6 @@
 import { useMemo, useState, type ChangeEvent } from "react";
 import { useQuery } from '@tanstack/react-query'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 import { SongList } from "./SongList";
 import { Spinner } from "./ui/spinner";
@@ -66,58 +65,45 @@ export function Search() {
 
   return (
     <div className="w-full px-5 py-6">
-      <div className="mx-auto flex max-w-5xl flex-col gap-6">
-        <div className="space-y-2">
-          <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">Discover</p>
-          <h1 className="text-3xl font-semibold leading-tight">Search the catalog</h1>
-          <p className="text-muted-foreground max-w-2xl">
-            Find songs, artists, and albums instantly. Results update as you type, and we show how
-            long each search took.
-          </p>
+      <div className="mx-auto flex max-w-5xl flex-col gap-4">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-semibold leading-tight">Search</h1>
         </div>
 
-        <Card>
-          <CardHeader className="gap-2">
-            <CardTitle>Search</CardTitle>
-            <CardDescription>
-              Type a song, artist, or album name to see matching results.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-col gap-3">
-              <Input
-                className="w-full max-w-2xl"
-                value={query}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
-                placeholder="Search songs..."
-                autoFocus
-              />
-              <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                {query.trim().length === 0 ? (
-                  <span>Start typing to search.</span>
-                ) : isSearching ? (
-                  <span className="flex items-center gap-2">
-                    <Spinner className="text-primary" />
-                    Searching…
-                  </span>
-                ) : error ? (
-                  <span className="text-destructive">Failed to load results.</span>
-                ) : (
-                  <>
-                    <span>{results.length} result{results.length === 1 ? "" : "s"}</span>
-                    {durationText ? <span>· {durationText}</span> : null}
-                  </>
-                )}
-              </div>
+        <div className="space-y-3">
+          <div className="flex flex-col gap-2">
+            <Input
+              className="w-full max-w-2xl"
+              value={query}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
+              placeholder="Search songs..."
+              autoFocus
+            />
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              {query.trim().length === 0 ? (
+                <span>Start typing to search.</span>
+              ) : isSearching ? (
+                <span className="flex items-center gap-2">
+                  <Spinner className="text-primary" />
+                  Searching…
+                </span>
+              ) : error ? (
+                <span className="text-destructive">Failed to load results.</span>
+              ) : (
+                <>
+                  <span>{results.length} result{results.length === 1 ? "" : "s"}</span>
+                  {durationText ? <span>· {durationText}</span> : null}
+                </>
+              )}
             </div>
+          </div>
 
-            {error ? (
-              <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                {error.message}
-              </div>
-            ) : null}
-          </CardContent>
-        </Card>
+          {error ? (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              {error.message}
+            </div>
+          ) : null}
+        </div>
 
         <div className="space-y-3">
           {isSearching ? (
