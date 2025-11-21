@@ -9,10 +9,16 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WeeklyRankingRouteImport } from './routes/weekly-ranking'
 import { Route as RatingsRouteImport } from './routes/ratings'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ArtistArtistIdRouteImport } from './routes/artist.$artistId'
 
+const WeeklyRankingRoute = WeeklyRankingRouteImport.update({
+  id: '/weekly-ranking',
+  path: '/weekly-ranking',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RatingsRoute = RatingsRouteImport.update({
   id: '/ratings',
   path: '/ratings',
@@ -32,35 +38,46 @@ const ArtistArtistIdRoute = ArtistArtistIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ratings': typeof RatingsRoute
+  '/weekly-ranking': typeof WeeklyRankingRoute
   '/artist/$artistId': typeof ArtistArtistIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ratings': typeof RatingsRoute
+  '/weekly-ranking': typeof WeeklyRankingRoute
   '/artist/$artistId': typeof ArtistArtistIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/ratings': typeof RatingsRoute
+  '/weekly-ranking': typeof WeeklyRankingRoute
   '/artist/$artistId': typeof ArtistArtistIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/ratings' | '/artist/$artistId'
+  fullPaths: '/' | '/ratings' | '/weekly-ranking' | '/artist/$artistId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/ratings' | '/artist/$artistId'
-  id: '__root__' | '/' | '/ratings' | '/artist/$artistId'
+  to: '/' | '/ratings' | '/weekly-ranking' | '/artist/$artistId'
+  id: '__root__' | '/' | '/ratings' | '/weekly-ranking' | '/artist/$artistId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   RatingsRoute: typeof RatingsRoute
+  WeeklyRankingRoute: typeof WeeklyRankingRoute
   ArtistArtistIdRoute: typeof ArtistArtistIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/weekly-ranking': {
+      id: '/weekly-ranking'
+      path: '/weekly-ranking'
+      fullPath: '/weekly-ranking'
+      preLoaderRoute: typeof WeeklyRankingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ratings': {
       id: '/ratings'
       path: '/ratings'
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   RatingsRoute: RatingsRoute,
+  WeeklyRankingRoute: WeeklyRankingRoute,
   ArtistArtistIdRoute: ArtistArtistIdRoute,
 }
 export const routeTree = rootRouteImport
