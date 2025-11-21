@@ -7,7 +7,7 @@ export const Route = createFileRoute('/')({
 
 function App() {
   return (
-    <div className='h-full flex justify-center items-center'>
+    <div className="min-h-screen px-4 py-8">
       <Search />
     </div>
   )

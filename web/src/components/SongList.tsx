@@ -15,9 +15,9 @@ interface SongListProps {
 
 export function SongList({ songs }: SongListProps) {
   return (
-    <div className="w-full flex flex-col items-center gap-5 m-5">
+    <div className="w-full flex flex-col items-stretch gap-4">
       {songs.map((song) => (
-        <Card key={song.id} className="mb-2 p-4 w-xl">
+        <Card key={song.id} className="p-4">
           <CardTitle>
             {song.title}
           </CardTitle>
