@@ -3,10 +3,11 @@ from __future__ import annotations
 import os
 import time
 from flask import Flask, jsonify, request, g
+from flask_cors import CORS
+
 from .db import get_db, DB
 from .manage import import_data, init_db
-from flask_cors import CORS  
-
+from .tool import load_sql
 
 
 def create_app() -> Flask:
@@ -43,6 +44,9 @@ def create_app() -> Flask:
                     print("Database initialization complete.")
                     import_data()
                     print("Data imported!")
+            # Always ensure weekly view exists (noop if already present)
+            db.execute_script(load_sql("src/sql/weekly-ranking-view.sql"))
+            print("Weekly ranking view ensured.")
         finally:
             temp_conn.close()
     except Exception as e:
@@ -135,6 +139,18 @@ def create_app() -> Flask:
                 "ratings": ratings
             })
         except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @app.get("/weekly-ranking")
+    def weekly_ranking():
+        try:
+            rankings = db.get_weekly_ranking()
+            return jsonify({
+                "count": len(rankings),
+                "rankings": rankings
+            })
+        except Exception as e:
+            print(f"Weekly ranking error: {e}")
             return jsonify({"error": str(e)}), 500
 
     return app

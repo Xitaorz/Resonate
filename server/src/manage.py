@@ -5,16 +5,15 @@ import sys
 from pathlib import Path
 from typing import List
 
-from .db import get_db, DB
+import pandas as pd
 import kagglehub
 from kagglehub import KaggleDatasetAdapter
-import pandas as pd
+
+from .db import get_db, DB
+from .tool import load_sql
 
 DATASET_FILE_NAME = "tracks_features.csv"
 
-
-def _read_file(path: str) -> str:
-    return Path(path).read_text(encoding="utf-8")
 
 PRODUCTION_DATA_SIZE = 100_000
 
@@ -22,12 +21,14 @@ PRODUCTION_DATA_SIZE = 100_000
 def init_db() -> None:
     db: DB = get_db()
 
-    schema_sql = _read_file("schema.sql")
-    example_sql = _read_file("example.sql")
-    large_sample = _read_file(Path(__file__).resolve().parent.parent / "large-sample-users.sql")
+    schema_sql = load_sql("schema.sql")
+    example_sql = load_sql("example.sql")
+    large_sample = load_sql("large-sample-users.sql")
+    weekly_view = load_sql("src/sql/weekly-ranking-view.sql")
     db.execute_script(schema_sql)
     db.execute_script(example_sql)
     db.execute_script(large_sample)
+    db.execute_script(weekly_view)
 
     print("Database initialized and exampleed.")
 

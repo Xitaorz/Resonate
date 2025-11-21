@@ -1,15 +1,18 @@
 from __future__ import annotations
-import pandas as pd
 
 import os
-from typing import Any, List, Dict, Optional
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
+import pandas as pd
 import pymysql
+from dotenv import load_dotenv
 from pymysql.cursors import DictCursor
 from sqlalchemy import create_engine
 
-from dotenv import load_dotenv
-load_dotenv() 
+from .tool import load_sql
+
+load_dotenv()
 
 print(
     "DB env ->",
@@ -20,11 +23,16 @@ print(
     os.getenv("MYSQL_DB"),
 )
 
+SQL_DIR = Path(__file__).resolve().parent / "sql"
+
 class DB:
 
     def __init__(self) -> None:
         # Store connection config only (no connection stored here)
         self._config: Dict[str, Any] = {}
+    
+    def _sql(self, filename: str) -> str:
+        return load_sql(SQL_DIR / filename)
 
     def import_csv(self, file_path: str, table_name: str, sample=False) -> int | None:
         df = pd.read_csv(file_path)
@@ -106,33 +114,17 @@ class DB:
     
     #list all users
     def list_users(self) -> List[Dict[str, Any]]:
+        sql = self._sql("list_users.sql")
         conn = self._ensure_conn()
         with conn.cursor() as cur:
-            cur.execute("SELECT uid, username, email, gender, age, city, province, mbti, created_at FROM users")
+            cur.execute(sql)
             rows = cur.fetchall()
         return list(rows)
     
     #search for songs, artists, and albums
     def search(self, query: str) -> List[Dict[str, Any]]:
         search_pattern = f"%{query}%"
-        sql = """
-            SELECT 
-                s.name AS song_name,
-                a.name AS artist_name,
-                a.artid AS artist_id,
-                al.title AS album_name,
-                al.release_date
-            FROM songs s
-            JOIN album_song als ON s.sid = als.sid
-            JOIN albums al ON als.alid = al.alid
-            JOIN album_owned_by_artist aoa ON al.alid = aoa.alid
-            JOIN artists a ON aoa.artid = a.artid
-            WHERE LOWER(s.name) LIKE LOWER(%s)
-               OR LOWER(a.name) LIKE LOWER(%s)
-               OR LOWER(al.title) LIKE LOWER(%s)
-            ORDER BY s.name
-            LIMIT 100
-        """
+        sql = self._sql("search.sql")
         
         conn = self._ensure_conn()
         with conn.cursor() as cur:
@@ -142,25 +134,7 @@ class DB:
     
     #get songs by artist
     def get_artist_songs(self, artist_id: str) -> List[Dict[str, Any]]:
-        sql = """
-            SELECT
-                s.sid,                
-                s.name  AS song_title, 
-                a.title AS album_title,
-                ar.name AS artist_name 
-            FROM artists AS ar
-            JOIN album_owned_by_artist AS aoa
-                ON ar.artid = aoa.artid         
-            JOIN albums AS a
-                ON aoa.alid = a.alid            
-            JOIN album_song AS als
-                ON a.alid = als.alid            
-            JOIN songs AS s
-                ON als.sid = s.sid              
-            WHERE ar.artid = %s
-            ORDER BY als.track_no ASC
-            LIMIT 50
-        """
+        sql = self._sql("artist_songs.sql")
         
         conn = self._ensure_conn()
         with conn.cursor() as cur:
@@ -170,35 +144,29 @@ class DB:
     
     #show all tables in the database
     def show_tables(self) -> List[Dict[str, Any]]:
+        sql = self._sql("show_tables.sql")
         conn = self._ensure_conn()
         with conn.cursor() as cur:
-            cur.execute("SHOW TABLES")
+            cur.execute(sql)
             rows = cur.fetchall()
         return list(rows)
     
     #get average ratings for all songs
     def get_rating_averages(self) -> List[Dict[str, Any]]:
+        sql = self._sql("rating_averages.sql")
         conn = self._ensure_conn()
         with conn.cursor() as cur:
-            sql = """
-                SELECT
-                    s.name AS song_name,
-                    a.name AS artist_name,
-                    ROUND(AVG(rt.rate_value), 2) AS avg_rating,
-                    COUNT(rt.rid) AS rating_count
-                FROM user_rates ur
-                JOIN ratings rt ON ur.rid = rt.rid
-                JOIN songs s ON ur.sid = s.sid
-                JOIN album_song als ON s.sid = als.sid
-                JOIN album_owned_by_artist aoa ON als.alid = aoa.alid
-                JOIN artists a ON aoa.artid = a.artid
-                GROUP BY s.sid, a.artid, s.name, a.name
-                ORDER BY avg_rating DESC, rating_count DESC
-            """
             cur.execute(sql)
             rows = cur.fetchall()
         return list(rows)
 
+    def get_weekly_ranking(self) -> List[Dict[str, Any]]:
+        sql = self._sql("show-weekly-ranking.sql")
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            cur.execute(sql)
+            rows = cur.fetchall()
+        return list(rows)
 
     def ping(self) -> bool:
         try:
