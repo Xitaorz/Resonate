@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { Input } from "./ui/input";
 import { SongList } from "./SongList";
@@ -14,6 +14,7 @@ import {
 } from "./ui/dialog";
 import { useAuth } from "@/hooks/use-auth";
 import { RatingStars } from "./RatingStars";
+import { Heart } from "lucide-react";
 
 type Result = {
   sid: string;
@@ -55,6 +56,7 @@ export function Search() {
   const [query, setQuery] = useState("");
   const auth = useAuth();
   const authUid = auth?.user?.uid ?? null;
+  const queryClient = useQueryClient();
   const [selectedSong, setSelectedSong] = useState<Result | null>(null);
   const [selectedPlaylist, setSelectedPlaylist] = useState<string>("");
   const [ratings, setRatings] = useState<Record<string, number>>({});
@@ -140,6 +142,31 @@ export function Search() {
     staleTime: 30_000,
   });
 
+  const {
+    data: favoritesData = [],
+    error: favoritesError,
+  } = useQuery<{ sid: string }[], Error>({
+    queryKey: ["user-favorites", authUid],
+    enabled: Boolean(authUid),
+    queryFn: async () => {
+      const res = await fetch(`/api/users/${authUid}/favorites`, {
+        headers: { "X-User-Id": authUid! },
+      });
+      if (!res.ok) throw new Error("Failed to load favorites");
+      const payload = await res.json();
+      return Array.isArray(payload?.favorites) ? payload.favorites : [];
+    },
+    staleTime: 30_000,
+  });
+
+  const favorites = useMemo(() => {
+    const set = new Set<string>();
+    favoritesData.forEach((f: any) => {
+      if (f?.sid) set.add(f.sid as string);
+    });
+    return set;
+  }, [favoritesData]);
+
   const addToPlaylist = useMutation({
     mutationFn: async () => {
       if (!selectedSong?.sid || !selectedPlaylist || !authUid) {
@@ -217,15 +244,18 @@ export function Search() {
       }
       return res.json();
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user-favorites", authUid] });
+    },
   });
 
   const isSearching = isLoading || isFetching;
 
-  return (
-    <div className="w-full px-5 py-6">
-      <div className="mx-auto flex max-w-5xl flex-col gap-4">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-semibold leading-tight">Search</h1>
+    return (
+      <div className="w-full px-5 py-6">
+        <div className="mx-auto flex max-w-5xl flex-col gap-4">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-semibold leading-tight">Search</h1>
         </div>
 
         <div className="space-y-3">
@@ -279,32 +309,53 @@ export function Search() {
           ) : results.length > 0 ? (
             <SongList
               songs={results.map((song: Result) => ({
-                id: song.sid,
+                sid: song.sid,
                 title: song.song_name,
-                id: `${song.song_name}-${song.artist_name}-${song.album_name}`,
                 artist: song.artist_name,
                 artistId: song.artist_id,
                 album: song.album_name,
               }))}
               action={(song) => (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!authUid}
-                  onClick={() => {
-                    const original = results.find(
-                      (r) =>
-                        r.sid === song.sid ||
-                        (r.song_name === song.title &&
-                          r.artist_name === song.artist &&
-                          r.album_name === song.album)
-                    );
-                    setSelectedSong(original ?? null);
-                    setSelectedPlaylist("");
-                  }}
-                >
-                  Add to playlist
-                </Button>
+                <div className="flex flex-col gap-2 items-end">
+                  {favoritesError ? (
+                    <div className="text-xs text-destructive">Favorites unavailable</div>
+                  ) : null}
+                  <RatingStars
+                    value={ratings[song.sid] || 0}
+                    onChange={(value) => {
+                      const original = resultsBySid[song.sid]
+                      if (!original) return;
+                      setRatings((prev) => ({ ...prev, [song.sid]: value }));
+                      rateSong.mutate({ sid: song.sid, rating: value });
+                    }}
+                    disabled={!authUid || rateSong.isPending}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!authUid || favoriteSong.isPending}
+                    onClick={() => favoriteSong.mutate(song.sid)}
+                    className="flex items-center gap-2"
+                  >
+                    <Heart
+                      className={`size-4 ${favorites.has(song.sid) ? 'text-red-500 fill-red-500' : ''}`}
+                      fill={favorites.has(song.sid) ? "currentColor" : "none"}
+                    />
+                    {favorites.has(song.sid) ? "Favorited" : "Favorite"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!authUid}
+                    onClick={() => {
+                      const original = resultsBySid[song.sid]
+                      setSelectedSong(original ?? null);
+                      setSelectedPlaylist("");
+                    }}
+                  >
+                    Add to playlist
+                  </Button>
+                </div>
               )}
             />
           ) : (
