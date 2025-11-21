@@ -235,6 +235,87 @@ def create_app() -> Flask:
             print(f"Weekly ranking error: {e}")
             return jsonify({"error": str(e)}), 500
 
+    def _get_uid_from_request(payload: dict | None = None) -> int | None:
+        # In a future login system, this should pull from session/JWT.
+        # For now, accept header override or payload field.
+        header_uid = request.headers.get("X-User-Id")
+        if header_uid and header_uid.isdigit():
+            return int(header_uid)
+        if payload and "uid" in payload and str(payload["uid"]).isdigit():
+            return int(payload["uid"])
+        return None
+
+    @app.post("/playlists")
+    def create_playlist():
+        payload = request.get_json(silent=True) or {}
+        uid = _get_uid_from_request(payload)
+        name = payload.get("name")
+        description = payload.get("description")
+        visibility = payload.get("visibility", "public")
+
+        if not uid:
+            return jsonify({"error": "uid required"}), 401
+        if not name:
+            return jsonify({"error": "name is required"}), 400
+        if visibility not in ("public", "private", "unlisted"):
+            return jsonify({"error": "visibility must be one of public, private, unlisted"}), 400
+
+        try:
+            plstid = db.create_playlist(int(uid), str(name), description, visibility)
+            return jsonify({"playlist_id": plstid}), 201
+        except Exception as e:
+            print(f"Create playlist error: {e}")
+            return jsonify({"error": str(e)}), 500
+
+    @app.post("/playlists/<int:plstid>/songs")
+    def add_playlist_song(plstid: int):
+        payload = request.get_json(silent=True) or {}
+        sid = payload.get("sid")
+        position = payload.get("position")
+        uid = _get_uid_from_request(payload)
+
+        if not sid:
+            return jsonify({"error": "sid is required"}), 400
+        playlist = db.get_playlist(plstid)
+        if not playlist:
+            return jsonify({"error": "playlist not found"}), 404
+        if uid is not None and int(playlist.get("uid", -1)) != uid:
+            return jsonify({"error": "forbidden"}), 403
+        try:
+            db.add_song_to_playlist(plstid, str(sid), int(position) if position is not None else None)
+            return jsonify({"playlist_id": plstid, "sid": sid, "position": position}), 201
+        except Exception as e:
+            print(f"Add song to playlist error: {e}")
+            return jsonify({"error": str(e)}), 500
+
+    @app.get("/users/<int:uid>/playlists")
+    def list_user_playlists(uid: int):
+        auth_uid = _get_uid_from_request()
+        if auth_uid is not None and auth_uid != uid:
+            return jsonify({"error": "forbidden"}), 403
+        try:
+            playlists = db.list_playlists(uid)
+            return jsonify({"count": len(playlists), "playlists": playlists})
+        except Exception as e:
+            print(f"List playlists error: {e}")
+            return jsonify({"error": str(e)}), 500
+
+    @app.get("/playlists/<int:plstid>")
+    def get_playlist(plstid: int):
+        playlist = db.get_playlist(plstid)
+        if not playlist:
+            return jsonify({"error": "playlist not found"}), 404
+        auth_uid = _get_uid_from_request()
+        # Allow owners through; allow public/unlisted without auth
+        if playlist.get("visibility") == "private" and auth_uid is not None and auth_uid != int(playlist.get("uid", -1)):
+            return jsonify({"error": "forbidden"}), 403
+        try:
+            songs = db.list_playlist_songs(plstid)
+            return jsonify({"playlist": playlist, "songs": songs})
+        except Exception as e:
+            print(f"Get playlist error: {e}")
+            return jsonify({"error": str(e)}), 500
+
     return app
 
 

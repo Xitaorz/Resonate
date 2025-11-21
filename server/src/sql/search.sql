@@ -1,4 +1,5 @@
 SELECT 
+  s.sid AS sid,
   s.name AS song_name,
   a.name AS artist_name,
   a.artid AS artist_id,

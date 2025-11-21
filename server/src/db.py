@@ -172,6 +172,53 @@ class DB:
             cur.execute(sql)
             rows = cur.fetchall()
         return list(rows)
+
+    def create_playlist(self, uid: int, name: str, description: Optional[str], visibility: str) -> int:
+        sql = self._sql("create_playlist.sql")
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            cur.execute(sql, (uid, name, description, visibility))
+            return int(cur.lastrowid)
+
+    def _next_playlist_position(self, plstid: int) -> int:
+        sql = self._sql("playlist_next_position.sql")
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            cur.execute(sql, (plstid,))
+            row = cur.fetchone()
+            return int(row["next_pos"] if row and row.get("next_pos") is not None else 1)
+
+    def add_song_to_playlist(self, plstid: int, sid: str, position: Optional[int] = None) -> None:
+        if position is None:
+            position = self._next_playlist_position(plstid)
+        sql = self._sql("add_playlist_song.sql")
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            cur.execute(sql, (plstid, sid, position))
+
+    def list_playlists(self, uid: int) -> List[Dict[str, Any]]:
+        sql = self._sql("list_playlists.sql")
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            cur.execute(sql, (uid,))
+            rows = cur.fetchall()
+        return list(rows)
+
+    def get_playlist(self, plstid: int) -> Optional[Dict[str, Any]]:
+        sql = self._sql("get_playlist.sql")
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            cur.execute(sql, (plstid,))
+            row = cur.fetchone()
+        return row
+
+    def list_playlist_songs(self, plstid: int) -> List[Dict[str, Any]]:
+        sql = self._sql("list_playlist_songs.sql")
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            cur.execute(sql, (plstid,))
+            rows = cur.fetchall()
+        return list(rows)
     def get_user_profile(self, uid: int) -> Optional[Dict[str, Any]]:
         conn = self._ensure_conn()
         with conn.cursor() as cur:

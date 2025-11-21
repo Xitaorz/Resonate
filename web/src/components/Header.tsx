@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router'
 
 import { useState } from 'react'
-import { Home, Menu, Star, TrendingUp, User, X } from 'lucide-react'
+import { Home, Menu, Music, Star, TrendingUp, User, X } from 'lucide-react'
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
@@ -89,6 +89,19 @@ export default function Header() {
           >
             <TrendingUp size={20} />
             <span className="font-medium">Weekly Ranking</span>
+          </Link>
+
+          <Link
+            to="/playlists"
+            onClick={() => setIsOpen(false)}
+            className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors mb-2"
+            activeProps={{
+              className:
+                'flex items-center gap-3 p-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 transition-colors mb-2',
+            }}
+          >
+            <Music size={20} />
+            <span className="font-medium">Playlists</span>
           </Link>
         </nav>
       </aside>
