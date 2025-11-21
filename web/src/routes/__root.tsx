@@ -6,7 +6,6 @@ import { Compass, Home, Star, TrendingUp, User } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -16,10 +15,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarRail,
-  SidebarSeparator,
-  SidebarTrigger,
 } from '@/components/ui/sidebar'
-import { Button } from '@/components/ui/button'
 
 export const Route = createRootRoute({
   component: () => {
@@ -32,6 +28,7 @@ export const Route = createRootRoute({
       { to: '/ratings', label: 'Ratings', icon: Star },
       { to: '/weekly-ranking', label: 'Weekly Ranking', icon: TrendingUp },
       { to: '/users/$uid', label: 'User Profile', icon: User, params: { uid: '1' }, matchPrefix: '/users' },
+      { to: '/playlists', label: 'Playlists', icon: User, matchPrefix: '/playlists' },
     ]
 
     return (
@@ -87,7 +84,7 @@ export const Route = createRootRoute({
             />
           ) : null}
         </SidebarInset>
-      </SidebarProvider>
+        </SidebarProvider>
       </div>
     )
   },
