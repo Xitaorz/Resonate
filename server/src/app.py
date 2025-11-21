@@ -436,6 +436,34 @@ def create_app() -> Flask:
             print(f"Get playlist error: {e}")
             return jsonify({"error": str(e)}), 500
 
+    @app.post("/favorites")
+    def favorite_song():
+        payload = request.get_json(silent=True) or {}
+        uid = _get_uid_from_request(payload)
+        sid = payload.get("sid")
+        if not uid:
+            return jsonify({"error": "uid required"}), 401
+        if not sid:
+            return jsonify({"error": "sid is required"}), 400
+        try:
+            db.favorite_song(int(uid), str(sid))
+            return jsonify({"uid": uid, "sid": sid}), 201
+        except Exception as e:
+            print(f"Favorite song error: {e}")
+            return jsonify({"error": str(e)}), 500
+
+    @app.get("/users/<int:uid>/favorites")
+    def list_favorites(uid: int):
+        auth_uid = _get_uid_from_request()
+        if auth_uid is not None and auth_uid != uid:
+            return jsonify({"error": "forbidden"}), 403
+        try:
+            favorites = db.list_favorites(uid)
+            return jsonify({"count": len(favorites), "favorites": favorites})
+        except Exception as e:
+            print(f"List favorites error: {e}")
+            return jsonify({"error": str(e)}), 500
+
     return app
 
 
