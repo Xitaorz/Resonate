@@ -186,8 +186,63 @@ class DB:
             rows = cur.fetchall()
         return list(rows)
 
+    def rate_song(
+        self,
+        uid: int,
+        sid: str,
+        rate_value: int,
+        comment: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        if rate_value < 1 or rate_value > 5:
+            raise ValueError("rate_value must be between 1 and 5")
+
+        conn = self.get_connection(autocommit=False)
+        try:
+            with conn.cursor() as cur:
+                # Check if the user already rated this song
+                cur.execute(
+                    "SELECT rid FROM user_rates WHERE uid = %s AND sid = %s LIMIT 1",
+                    (uid, sid),
+                )
+                existing = cur.fetchone()
+
+                if existing:
+                    rid = existing["rid"]
+                    cur.execute(
+                        "UPDATE ratings SET rate_value = %s, comment = %s WHERE rid = %s",
+                        (rate_value, comment, rid),
+                    )
+                else:
+                    cur.execute(
+                        "INSERT INTO ratings (rate_value, comment) VALUES (%s, %s)",
+                        (rate_value, comment),
+                        print("inserted")
+                    )
+                    rid = cur.lastrowid
+                    cur.execute(
+                        "INSERT INTO user_rates (rid, uid, sid) VALUES (%s, %s, %s)",
+                        (rid, uid, sid),
+                    )
+
+            conn.commit()
+            return {
+                "rid": rid,
+                "uid": uid,
+                "sid": sid,
+                "rate_value": rate_value,
+                "comment": comment,
+            }
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
     def get_weekly_ranking(self) -> List[Dict[str, Any]]:
-        # Refresh snapshot to avoid missing-table issues if event didn’t run
+        # Refresh snapshot to avoid missing-table issues if event didn't run
         try:
             self.execute_script(self._sql("weekly-ranking-refresh.sql"))
         except Exception as e:

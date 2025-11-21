@@ -317,6 +317,32 @@ def create_app() -> Flask:
             print(f"Recommendations endpoint error: {e}")
             return jsonify({"error": "Failed to fetch recommendations"}), 500
 
+    @app.post("/songs/<sid>/rate")
+    def rate_song(sid: str):
+        payload = request.get_json(silent=True) or {}
+        try:
+            uid = int(payload.get("uid"))
+        except (TypeError, ValueError):
+            return jsonify({"error": "uid is required and must be an integer"}), 400
+
+        try:
+            rate_value = int(payload.get("rate_value"))
+        except (TypeError, ValueError):
+            return jsonify({"error": "rate_value is required and must be an integer"}), 400
+
+        comment = payload.get("comment")
+        if comment is not None and not isinstance(comment, str):
+            return jsonify({"error": "comment must be a string"}), 400
+
+        try:
+            rating_row = db.rate_song(uid=uid, sid=sid, rate_value=rate_value, comment=comment)
+            return jsonify(rating_row), 201
+        except ValueError as ve:
+            return jsonify({"error": str(ve)}), 400
+        except Exception as e:
+            print(f"Rate song error: {e}")
+            return jsonify({"error": "Failed to rate song"}), 500
+
     @app.get("/weekly-ranking")
     def weekly_ranking():
         try:
