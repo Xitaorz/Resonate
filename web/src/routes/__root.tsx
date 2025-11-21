@@ -21,6 +21,12 @@ import {
 import { Dialog, DialogTrigger } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 
+type AuthUser = {
+  uid: string
+  username?: string
+  email?: string
+}
+
 const LoginDialog = lazy(() => import('@/components/auth/LoginDialog'))
 
 export const Route = createRootRoute({
@@ -28,21 +34,23 @@ export const Route = createRootRoute({
     const pathname = useRouterState({
       select: (state) => state.location.pathname,
     })
+    
+    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
+    const [auth, setAuth] = useState<{ user: AuthUser; token: string } | null>(null)
+    const [authError, setAuthError] = useState<string | null>(null)
+    const [loginOpen, setLoginOpen] = useState(false)
+    const [loggingIn, setLoggingIn] = useState(false)
+    
+    const currentUserId = auth?.user?.uid || '1'
 
     const navItems = [
       { to: '/', label: 'Search', icon: Home },
       { to: '/ratings', label: 'Ratings', icon: Star },
       { to: '/weekly-ranking', label: 'Weekly Ranking', icon: TrendingUp },
-      { to: '/users/$uid', label: 'User Profile', icon: User, params: { uid: '1' }, matchPrefix: '/users' },
+      { to: '/users/$uid', label: 'User Profile', icon: User, params: { uid: currentUserId }, matchPrefix: '/users' },
       { to: '/playlists', label: 'Playlists', icon: User, matchPrefix: '/playlists' },
     ]
-
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
-    const [auth, setAuth] = useState<{ user: any; token: string } | null>(null)
-    const [authError, setAuthError] = useState<string | null>(null)
-    const [loginOpen, setLoginOpen] = useState(false)
-    const [loggingIn, setLoggingIn] = useState(false)
 
     useEffect(() => {
       const stored = localStorage.getItem('resonate_auth')

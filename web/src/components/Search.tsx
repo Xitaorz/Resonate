@@ -1,11 +1,20 @@
-import { useMemo, useState, type ChangeEvent } from "react";
-import { useQuery } from '@tanstack/react-query'
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { useMutation, useQuery } from '@tanstack/react-query'
 
 import { Input } from "./ui/input";
 import { SongList } from "./SongList";
 import { Spinner } from "./ui/spinner";
+import { Button } from "./ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "./ui/dialog";
 
 type Result = {
+  sid: string;
   song_name: string;
   artist_name: string;
   artist_id: string;
@@ -42,6 +51,9 @@ async function searchSongs(query: string): Promise<SearchPayload> {
 
 export function Search() {
   const [query, setQuery] = useState("");
+  const [authUid, setAuthUid] = useState<string | null>(null);
+  const [selectedSong, setSelectedSong] = useState<Result | null>(null);
+  const [selectedPlaylist, setSelectedPlaylist] = useState<string>("");
 
   const {
     data,
@@ -60,6 +72,73 @@ export function Search() {
     if (!data) return null;
     return `${data.durationMs.toFixed(1)} ms`;
   }, [data]);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("resonate_auth");
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed?.user?.uid) {
+          setAuthUid(String(parsed.user.uid));
+        }
+      } catch {
+        setAuthUid(null);
+      }
+    }
+  }, []);
+
+  const {
+    data: playlists = [],
+    isLoading: playlistsLoading,
+    error: playlistsError,
+    refetch: refetchPlaylists,
+  } = useQuery<
+    { plstid: number; name: string }[],
+    Error
+  >({
+    queryKey: ["user-playlists", authUid],
+    enabled: Boolean(authUid),
+    queryFn: async () => {
+      const res = await fetch(`/api/users/${authUid}/playlists`, {
+        headers: { "X-User-Id": authUid! },
+      });
+      if (!res.ok) throw new Error("Failed to load playlists");
+      const payload = await res.json();
+      return payload.playlists ?? [];
+    },
+    staleTime: 30_000,
+  });
+
+  const addToPlaylist = useMutation({
+    mutationFn: async () => {
+      if (!selectedSong?.sid || !selectedPlaylist || !authUid) {
+        throw new Error("Missing song or playlist");
+      }
+      const res = await fetch(`/api/playlists/${selectedPlaylist}/songs`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-User-Id": authUid,
+        },
+        body: JSON.stringify({ sid: selectedSong.sid }),
+      });
+      if (!res.ok) {
+        let msg = "Failed to add to playlist";
+        try {
+          const payload = await res.json();
+          msg = payload?.error || msg;
+        } catch {
+          // ignore
+        }
+        throw new Error(msg);
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      setSelectedSong(null);
+      setSelectedPlaylist("");
+    },
+  });
 
   const isSearching = isLoading || isFetching;
 
@@ -121,12 +200,33 @@ export function Search() {
           ) : results.length > 0 ? (
             <SongList
               songs={results.map((song: Result) => ({
+                sid: song.sid,
                 title: song.song_name,
                 id: `${song.song_name}-${song.artist_name}-${song.album_name}`,
                 artist: song.artist_name,
                 artistId: song.artist_id,
                 album: song.album_name,
               }))}
+              action={(song) => (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!authUid}
+                  onClick={() => {
+                    const original = results.find(
+                      (r) =>
+                        r.sid === song.sid ||
+                        (r.song_name === song.title &&
+                          r.artist_name === song.artist &&
+                          r.album_name === song.album)
+                    );
+                    setSelectedSong(original ?? null);
+                    setSelectedPlaylist("");
+                  }}
+                >
+                  Add to playlist
+                </Button>
+              )}
             />
           ) : (
             <div className="rounded-lg border border-dashed border-border/60 bg-muted/30 px-4 py-10 text-center text-sm text-muted-foreground">
@@ -134,6 +234,84 @@ export function Search() {
             </div>
           )}
         </div>
+
+        <Dialog
+          open={Boolean(selectedSong)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setSelectedSong(null);
+              setSelectedPlaylist("");
+              addToPlaylist.reset();
+            }
+          }}
+        >
+          <DialogContent className="max-w-sm p-5">
+            <DialogHeader>
+              <DialogTitle>Add to playlist</DialogTitle>
+              <DialogDescription>
+                {selectedSong ? `Choose a playlist for "${selectedSong.song_name}"` : "Select a playlist"}
+              </DialogDescription>
+            </DialogHeader>
+            {!authUid ? (
+              <div className="text-sm text-muted-foreground">
+                Please log in to add songs to playlists.
+              </div>
+            ) : playlistsLoading ? (
+              <div className="text-sm text-muted-foreground">Loading playlists…</div>
+            ) : playlistsError ? (
+              <div className="space-y-2 text-sm text-destructive">
+                <div>Failed to load playlists.</div>
+                <Button size="sm" variant="outline" onClick={() => refetchPlaylists()}>
+                  Retry
+                </Button>
+              </div>
+            ) : playlists.length === 0 ? (
+              <div className="text-sm text-muted-foreground">
+                No playlists yet. Create one first.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <select
+                  className="w-full rounded border px-3 py-2 text-sm"
+                  value={selectedPlaylist}
+                  onChange={(e) => setSelectedPlaylist(e.target.value)}
+                >
+                  <option value="">Select a playlist</option>
+                  {playlists.map((pl) => (
+                    <option key={pl.plstid} value={pl.plstid}>
+                      {pl.name}
+                    </option>
+                  ))}
+                </select>
+                {addToPlaylist.isError ? (
+                  <div className="text-sm text-destructive">
+                    {(addToPlaylist.error as any)?.message || 'Failed to add song'}
+                  </div>
+                ) : null}
+                <div className="flex gap-2">
+                  <Button
+                    className="flex-1"
+                    onClick={() => addToPlaylist.mutate()}
+                    disabled={!selectedPlaylist || addToPlaylist.isPending}
+                  >
+                    {addToPlaylist.isPending ? 'Adding…' : 'Add'}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="flex-1"
+                    onClick={() => {
+                      setSelectedSong(null);
+                      setSelectedPlaylist("");
+                      addToPlaylist.reset();
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

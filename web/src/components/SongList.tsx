@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 type Song = {
   id: string;
+  sid?: string;
   title: string;
   artist: string;
   artistId?: string;
