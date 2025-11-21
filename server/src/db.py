@@ -70,6 +70,14 @@ class DB:
             cursorclass=DictCursor,
             autocommit=autocommit,
         )
+    
+    def get_song_by_id(self, song_id: str) -> Optional[Dict[str, Any]]:
+        sql = self._sql("get_song_by_id.sql")
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            cur.execute(sql, (song_id,))
+            row = cur.fetchone()
+        return row
 
     def _ensure_conn(self) -> pymysql.connections.Connection:
         # If running inside Flask app context, reuse g.db_conn.
