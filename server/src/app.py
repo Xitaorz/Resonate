@@ -251,6 +251,19 @@ def create_app() -> Flask:
                 "count": 0,
                 "results": []
             })
+
+    @app.get("/albums/<album_id>/songs")
+    def get_album_songs(album_id: str):
+        try:
+            songs = db.get_album_songs(album_id)
+            return jsonify({
+                "album_id": album_id,
+                "count": len(songs),
+                "songs": songs
+            })
+        except Exception as e:
+            print(f"Album songs endpoint error: {e}")
+            return jsonify({"error": "Failed to fetch album songs"}), 500
     
     @app.get("/artist/<artist_id>/songs")
     def get_artist_songs(artist_id: str):

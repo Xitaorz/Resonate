@@ -141,6 +141,14 @@ class DB:
             rows = cur.fetchall()
         return list(rows)
     
+    def get_album_songs(self, album_id: str) -> List[Dict[str, Any]]:
+        sql = self._sql("get_album_songs.sql")
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            cur.execute(sql, (album_id,))
+            rows = cur.fetchall()
+        return list(rows)
+
     #get songs by artist
     def get_artist_songs(self, artist_id: str) -> List[Dict[str, Any]]:
         sql = self._sql("artist_songs.sql")
