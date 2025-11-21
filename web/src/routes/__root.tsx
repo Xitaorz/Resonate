@@ -28,6 +28,7 @@ type AuthUser = {
 }
 
 const LoginDialog = lazy(() => import('@/components/auth/LoginDialog'))
+const SignupDialog = lazy(() => import('@/components/auth/SignupDialog'))
 
 export const Route = createRootRoute({
   component: () => {
@@ -35,12 +36,15 @@ export const Route = createRootRoute({
       select: (state) => state.location.pathname,
     })
     
+    const [username, setUsername] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [auth, setAuth] = useState<{ user: AuthUser; token: string } | null>(null)
     const [authError, setAuthError] = useState<string | null>(null)
     const [loginOpen, setLoginOpen] = useState(false)
+    const [signupOpen, setSignupOpen] = useState(false)
     const [loggingIn, setLoggingIn] = useState(false)
+    const [signingUp, setSigningUp] = useState(false)
     
     const currentUserId = auth?.user?.uid || '1'
 
@@ -81,6 +85,7 @@ export const Route = createRootRoute({
           localStorage.setItem('resonate_auth', JSON.stringify(payload))
           setLoginOpen(false)
           setAuthError(null)
+          setUsername('')
           setEmail('')
           setPassword('')
         }
@@ -88,6 +93,37 @@ export const Route = createRootRoute({
         setAuthError('Network error while logging in')
       } finally {
         setLoggingIn(false)
+      }
+    }
+
+    const handleSignup = async () => {
+      setSigningUp(true)
+      setAuthError(null)
+      try {
+        const effectiveUsername = username || email.split('@')[0] || 'user'
+        const res = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: effectiveUsername, email, password }),
+        })
+        const data = await res.json()
+        if (!res.ok || data.error) {
+          setAuthError(typeof data.error === 'string' ? data.error : 'Signup failed')
+        } else {
+          const payload = { user: data.user, token: data.token }
+          setAuth(payload)
+          localStorage.setItem('resonate_auth', JSON.stringify(payload))
+          setLoginOpen(false)
+          setAuthError(null)
+          setSignupOpen(false)
+          setUsername('')
+          setEmail('')
+          setPassword('')
+        }
+      } catch (err: any) {
+        setAuthError('Network error while signing up')
+      } finally {
+        setSigningUp(false)
       }
     }
 
@@ -108,38 +144,73 @@ export const Route = createRootRoute({
                 </div>
               </SidebarHeader>
             ) : (
-              <Dialog
-                open={loginOpen}
-                onOpenChange={(open) => {
-                  setLoginOpen(open)
-                  if (!open) setAuthError(null)
-                }}
-              >
-                <DialogTrigger asChild>
-                  <SidebarHeader className="cursor-pointer select-none border-b px-3 py-2 transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-base font-semibold leading-tight">Resonate</span>
-                      <span className="text-xs text-muted-foreground">Click to log in</span>
-                    </div>
-                  </SidebarHeader>
-                </DialogTrigger>
-                <Suspense fallback={null}>
-                  <LoginDialog
-                    open={loginOpen}
-                    onOpenChange={(open) => {
-                      setLoginOpen(open)
-                      if (!open) setAuthError(null)
-                    }}
-                    email={email}
-                    password={password}
-                    onEmailChange={setEmail}
-                    onPasswordChange={setPassword}
-                    onSubmit={handleLogin}
-                    isLoading={loggingIn}
-                    error={authError}
-                  />
-                </Suspense>
-              </Dialog>
+              <>
+                <Dialog
+                  open={loginOpen}
+                  onOpenChange={(open) => {
+                    setLoginOpen(open)
+                    if (!open) setAuthError(null)
+                  }}
+                >
+                  <DialogTrigger asChild>
+                    <SidebarHeader className="cursor-pointer select-none border-b px-3 py-2 transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-base font-semibold leading-tight">Resonate</span>
+                        <span className="text-xs text-muted-foreground">Click to log in</span>
+                      </div>
+                    </SidebarHeader>
+                  </DialogTrigger>
+                  <Suspense fallback={null}>
+                    <LoginDialog
+                      open={loginOpen}
+                      onOpenChange={(open) => {
+                        setLoginOpen(open)
+                        if (!open) setAuthError(null)
+                      }}
+                      email={email}
+                      password={password}
+                      onEmailChange={setEmail}
+                      onPasswordChange={setPassword}
+                      onSubmit={handleLogin}
+                      isLoading={loggingIn}
+                      error={authError}
+                    />
+                  </Suspense>
+                </Dialog>
+                <Dialog
+                  open={signupOpen}
+                  onOpenChange={(open) => {
+                    setSignupOpen(open)
+                    if (!open) setAuthError(null)
+                  }}
+                >
+                  <DialogTrigger asChild>
+                    <SidebarFooter className="border-t px-3 py-2">
+                      <Button variant="ghost" size="sm" className="w-full justify-start">
+                        Sign up
+                      </Button>
+                    </SidebarFooter>
+                  </DialogTrigger>
+                  <Suspense fallback={null}>
+                    <SignupDialog
+                      open={signupOpen}
+                      onOpenChange={(open) => {
+                        setSignupOpen(open)
+                        if (!open) setAuthError(null)
+                      }}
+                      username={username}
+                      email={email}
+                      password={password}
+                      onUsernameChange={setUsername}
+                      onEmailChange={setEmail}
+                      onPasswordChange={setPassword}
+                      onSubmit={handleSignup}
+                      isLoading={signingUp}
+                      error={authError}
+                    />
+                  </Suspense>
+                </Dialog>
+              </>
             )}
             <SidebarContent className="overscroll-none">
               <SidebarGroup className="overscroll-none">
