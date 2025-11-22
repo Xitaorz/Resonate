@@ -137,7 +137,7 @@ class DB:
         
         conn = self._ensure_conn()
         with conn.cursor() as cur:
-            cur.execute(sql, (search_pattern, search_pattern, search_pattern))
+            cur.execute(sql, (search_pattern, search_pattern, search_pattern, search_pattern))
             rows = cur.fetchall()
         return list(rows)
     
