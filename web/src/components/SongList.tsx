@@ -1,6 +1,7 @@
 import { Card, CardContent, CardTitle } from "./ui/card";
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { TagIcon } from "./TagIcon";
 
 type Song = {
   sid: string;
@@ -8,6 +9,7 @@ type Song = {
   artist: string;
   artistId?: string;
   album: string;
+  tags?: string | null;
 }
 
 interface SongListProps {
@@ -39,6 +41,17 @@ export function SongList({ songs, action }: SongListProps) {
                   )}
                 </p>
                 <p>Album: {song.album}</p>
+                {song.tags ? (
+                  <div className="flex gap-2 flex-wrap mt-1">
+                    {song.tags
+                      .split(",")
+                      .map((t) => t.trim())
+                      .filter(Boolean)
+                      .map((tag) => (
+                        <TagIcon key={tag} tag={tag} />
+                      ))}
+                  </div>
+                ) : null}
               </CardContent>
             </div>
             {action ? <div className="shrink-0">{action(song)}</div> : null}

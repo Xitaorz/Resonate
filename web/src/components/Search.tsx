@@ -314,6 +314,7 @@ export function Search() {
                 artist: song.artist_name,
                 artistId: song.artist_id,
                 album: song.album_name,
+                tags: song.tags || null,
               }))}
               action={(song) => (
                 <div className="flex flex-col gap-2 items-end">
