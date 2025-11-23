@@ -86,7 +86,8 @@ export const Route = createRootRoute({
           setEmail('')
           setPassword('')
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
+        console.error(err)
         setAuthError('Network error while logging in')
       } finally {
         setLoggingIn(false)
@@ -117,7 +118,8 @@ export const Route = createRootRoute({
           setEmail('')
           setPassword('')
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
+        console.error(err)
         setAuthError('Network error while signing up')
       } finally {
         setSigningUp(false)
