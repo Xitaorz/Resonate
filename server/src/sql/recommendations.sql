@@ -2,10 +2,9 @@ WITH user_tag_counts AS (
     SELECT 
         vst.tag AS tag_id,
         COUNT(*) AS tag_count
-    FROM playlists p
-    JOIN playlist_song ps ON ps.plstid = p.plstid
-    JOIN virt_song_tag vst ON vst.sid = ps.sid
-    WHERE p.uid = %(uid)s
+    FROM user_favorite_song ufs
+    JOIN virt_song_tag vst ON vst.sid = ufs.sid
+    WHERE ufs.uid = %(uid)s
     GROUP BY vst.tag
 ),
 
@@ -22,10 +21,9 @@ candidate_songs AS (
     JOIN virt_song_tag vst ON vst.sid = s.sid
     JOIN top_tags tt ON tt.tag_id = vst.tag
     WHERE s.sid NOT IN (
-        SELECT ps2.sid
-        FROM playlists p2
-        JOIN playlist_song ps2 ON ps2.plstid = p2.plstid
-        WHERE p2.uid = %(uid)s
+        SELECT ufs2.sid
+        FROM user_favorite_song ufs2
+        WHERE ufs2.uid = %(uid)s
     )
 )
 SELECT 

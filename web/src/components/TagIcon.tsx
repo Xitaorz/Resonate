@@ -1,5 +1,3 @@
-import React from "react";
-
 const TAG_ICON_MAP: Record<string, { icon: string; label: string }> = {
   party:    { icon: "🎉", label: "Party" },
   workout:  { icon: "🏋️‍♂️", label: "Workout" },

@@ -214,6 +214,31 @@ function SongDetailPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['song-favorites', authUid] })
+      queryClient.invalidateQueries({ queryKey: ['song-detail', sid] })
+      queryClient.invalidateQueries({ queryKey: ['favorites', authUid] })
+    },
+  })
+
+  const unfavoriteSong = useMutation({
+    mutationFn: async () => {
+      if (!authUid) throw new Error('Login required')
+      const res = await fetch('/api/favorites', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': authUid.toString(),
+        },
+        body: JSON.stringify({ sid }),
+      })
+      const payload = await safeJson(res)
+      const msg = (payload as any)?.error || res.statusText || 'Failed to remove favorite'
+      if (!res.ok) throw new Error(msg)
+      return payload
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['song-favorites', authUid] })
+      queryClient.invalidateQueries({ queryKey: ['song-detail', sid] })
+      queryClient.invalidateQueries({ queryKey: ['favorites', authUid] })
     },
   })
 
@@ -377,15 +402,23 @@ function SongDetailPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => favoriteSong.mutate()}
-                        disabled={favoriteSong.isPending}
+                        onClick={() =>
+                          favorites.has(sid) ? unfavoriteSong.mutate() : favoriteSong.mutate()
+                        }
+                        disabled={favoriteSong.isPending || unfavoriteSong.isPending}
                         className="min-w-[140px] flex items-center gap-2"
                       >
                         <Heart
                           className={`size-4 ${favorites.has(sid) ? 'text-red-500 fill-red-500' : ''}`}
                           fill={favorites.has(sid) ? 'currentColor' : 'none'}
                         />
-                        {favorites.has(sid) ? 'Favorited' : 'Favorite'}
+                        {favorites.has(sid)
+                          ? unfavoriteSong.isPending
+                            ? 'Removing...'
+                            : 'Unfavorite'
+                          : favoriteSong.isPending
+                            ? 'Saving...'
+                            : 'Favorite'}
                       </Button>
                       {favoritesError ? (
                         <p className="text-xs text-destructive">Favorites unavailable.</p>
@@ -393,6 +426,11 @@ function SongDetailPage() {
                       {favoriteSong.isError ? (
                         <p className="text-xs text-destructive">
                           {(favoriteSong.error as Error).message || 'Failed to favorite'}
+                        </p>
+                      ) : null}
+                      {unfavoriteSong.isError ? (
+                        <p className="text-xs text-destructive">
+                          {(unfavoriteSong.error as Error).message || 'Failed to remove favorite'}
                         </p>
                       ) : null}
                     </div>

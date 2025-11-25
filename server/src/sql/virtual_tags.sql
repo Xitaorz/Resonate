@@ -1,57 +1,33 @@
 CREATE OR REPLACE VIEW virt_song_tag AS
-    SELECT sid, name AS song_name, 1 AS tag
-    FROM songs
-    WHERE danceability >= 0.60
-      AND energy >= 0.70
-      AND valence >= 0.50
-      AND tempo BETWEEN 110 AND 150
-      AND loudness > -7
-      AND `mode` = 1
-
-UNION ALL
-    SELECT sid, name, 2
-    FROM songs
-    WHERE energy < 0.50
-      AND acousticness > 0.40
-      AND tempo BETWEEN 60 AND 110
-      AND loudness < -8
-
-UNION ALL
-    SELECT sid, name, 3
-    FROM songs
-    WHERE valence < 0.35
-      AND energy < 0.50
-      AND tempo < 110
-      AND loudness < -8
-      AND `mode` = 0
-
-UNION ALL
-    SELECT sid, name, 4
-    FROM songs
-    WHERE energy >= 0.75
-      AND danceability >= 0.55
-      AND tempo BETWEEN 120 AND 180
-      AND loudness > -6
-
-UNION ALL
-    SELECT sid, name, 5
-    FROM songs
-    WHERE energy < 0.30
-      AND speechiness < 0.20
-      AND acousticness > 0.60
-      AND loudness < -12
-      AND tempo BETWEEN 40 AND 90
-
-UNION ALL
-    SELECT sid, name, 6
-    FROM songs
-    WHERE valence BETWEEN 0.40 AND 0.70
-      AND energy BETWEEN 0.30 AND 0.60
-      AND acousticness > 0.25
-      AND tempo BETWEEN 60 AND 100
-      AND loudness < -6;
-
-
-
-
-      
+SELECT
+    s.sid,
+    s.name AS song_name,
+    CASE
+        WHEN s.danceability >= 0.50
+             AND s.energy >= 0.70
+             AND s.tempo BETWEEN 110 AND 150
+             AND s.loudness > -7
+             AND s.`mode` = 1 THEN 1
+        WHEN s.energy < 0.60
+             AND s.acousticness > 0.40
+             AND s.tempo BETWEEN 60 AND 110
+             AND s.loudness < -8 THEN 2
+        WHEN s.valence < 0.35
+             AND s.energy < 0.50
+             AND s.loudness < -8
+             AND s.`mode` = 0 THEN 3
+        WHEN s.energy >= 0.75
+             AND s.danceability >= 0.55
+             AND s.loudness > -6 THEN 4
+        WHEN s.energy < 0.30
+             AND s.speechiness < 0.20
+             AND s.loudness < -12
+             AND s.tempo BETWEEN 40 AND 90 THEN 5
+        WHEN s.valence BETWEEN 0.40 AND 0.70
+             AND s.energy BETWEEN 0.30 AND 0.60
+             AND s.acousticness > 0.25
+             AND s.loudness < -6 THEN 6
+        ELSE ((s.sid - 1) % 6) + 1
+    END AS tag
+FROM songs s
+WHERE (s.sid % 2) = 0;
