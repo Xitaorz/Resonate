@@ -142,6 +142,12 @@ export function Search() {
     staleTime: 30_000,
   });
 
+  useEffect(() => {
+    if (selectedSong && authUid) {
+      refetchPlaylists();
+    }
+  }, [selectedSong, authUid, refetchPlaylists]);
+
   const {
     data: favoritesData = [],
     error: favoritesError,
@@ -181,7 +187,7 @@ export function Search() {
         body: JSON.stringify({ sid: selectedSong.sid }),
       });
       if (!res.ok) {
-        let msg = "Failed to add to playlist";
+        let msg = "Song already exists in this playlist";
         try {
           const payload = await res.json();
           msg = payload?.error || msg;

@@ -176,6 +176,7 @@ CREATE INDEX idx_album_song_alid_trackno     ON album_song(alid, track_no);
 
 
 CREATE INDEX idx_playlists_uid               ON playlists(uid);
+CREATE INDEX idx_playlist_song_plssid        ON playlist_song(plstid, sid);
 CREATE INDEX idx_user_favorite_song_uid      ON user_favorite_song(uid);
 CREATE INDEX idx_ufs_favored_at_sid          ON user_favorite_song (favored_at, sid);
 

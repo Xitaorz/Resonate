@@ -79,6 +79,7 @@ function PlaylistsPage() {
     onSuccess: async () => {
       setForm({ name: '', description: '', visibility: 'public' })
       await queryClient.invalidateQueries({ queryKey: ['playlists-page', uid] })
+      await queryClient.invalidateQueries({ queryKey: ['user-playlists', uid] })
       refetch()
     },
   })

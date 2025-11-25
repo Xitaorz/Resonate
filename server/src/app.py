@@ -442,6 +442,8 @@ def create_app() -> Flask:
         try:
             db.add_song_to_playlist(plstid, str(sid), int(position) if position is not None else None)
             return jsonify({"playlist_id": plstid, "sid": sid, "position": position}), 201
+        except ValueError as ve:
+            return jsonify({"error": str(ve)}), 400
         except Exception as e:
             print(f"Add song to playlist error: {e}")
             return jsonify({"error": str(e)}), 500

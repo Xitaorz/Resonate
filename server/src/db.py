@@ -285,11 +285,20 @@ class DB:
             return int(row["next_pos"] if row and row.get("next_pos") is not None else 1)
 
     def add_song_to_playlist(self, plstid: int, sid: str, position: Optional[int] = None) -> None:
-        if position is None:
-            position = self._next_playlist_position(plstid)
-        sql = self._sql("add_playlist_song.sql")
+        # Avoid duplicates so we can return a clean error to the caller
         conn = self._ensure_conn()
         with conn.cursor() as cur:
+            cur.execute(
+                "SELECT 1 FROM playlist_song WHERE plstid = %s AND sid = %s LIMIT 1",
+                (plstid, sid),
+            )
+            if cur.fetchone():
+                raise ValueError("Song already exists in playlist")
+
+            if position is None:
+                position = self._next_playlist_position(plstid)
+
+            sql = self._sql("add_playlist_song.sql")
             cur.execute(sql, (plstid, sid, position))
 
     def list_playlists(self, uid: int) -> List[Dict[str, Any]]:
