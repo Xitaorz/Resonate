@@ -100,14 +100,6 @@ CREATE TABLE IF NOT EXISTS tags (
   name VARCHAR(100) NOT NULL UNIQUE
 );
 
-CREATE TABLE IF NOT EXISTS song_tag (
-  sid VARCHAR(35) NOT NULL,
-  tid BIGINT UNSIGNED NOT NULL,
-  PRIMARY KEY (sid, tid),
-  INDEX idx_song_tag_tag (tid),
-  CONSTRAINT fk_st_song FOREIGN KEY (sid) REFERENCES songs(sid) ON DELETE CASCADE,
-  CONSTRAINT fk_st_tag  FOREIGN KEY (tid) REFERENCES tags(tid) ON DELETE CASCADE
-);
 
 -- tags for each album via its songs
 CREATE OR REPLACE VIEW album_tag_view AS
