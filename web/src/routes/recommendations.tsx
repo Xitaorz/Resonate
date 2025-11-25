@@ -49,7 +49,17 @@ function RecommendationsPage() {
       if (!res.ok || payload?.error) {
         throw new Error(payload?.error || 'Failed to load recommendations')
       }
-      return Array.isArray(payload?.recommendations) ? payload.recommendations : []
+      const recs = Array.isArray(payload?.recommendations) ? payload.recommendations : []
+      const normalized = recs.map((rec: any) => ({
+        sid: String(rec.sid || ''),
+        name: rec.name || rec.song_title || 'Unknown song',
+        avg_rating: rec.avg_rating !== null && rec.avg_rating !== undefined ? Number(rec.avg_rating) : 0,
+        matched_tags: Number(rec.matched_tags ?? 0),
+        tag_match_score: Number(rec.tag_match_score ?? 0),
+        recommendation_score: Number(rec.recommendation_score ?? 0),
+      }))
+      console.log('Recommendations normalized', normalized)
+      return normalized
     },
     staleTime: 30_000,
   })
@@ -127,8 +137,14 @@ function RecommendationsPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="grid gap-3 sm:grid-cols-3">
-                <Metric label="Rec score" value={rec.recommendation_score?.toFixed(2) ?? '0.00'} />
-                <Metric label="Avg rating" value={rec.avg_rating ? rec.avg_rating.toFixed(2) : '0.00'} />
+                <Metric
+                  label="Rec score"
+                  value={Number.isFinite(rec.recommendation_score) ? rec.recommendation_score.toFixed(2) : '0.00'}
+                />
+                <Metric
+                  label="Avg rating"
+                  value={Number.isFinite(rec.avg_rating ?? NaN) ? Number(rec.avg_rating).toFixed(2) : '0.00'}
+                />
                 <Metric label="Matched tags" value={`${rec.matched_tags} tags`} />
               </div>
               <Separator />
