@@ -161,10 +161,13 @@ def create_app() -> Flask:
         
     @app.get("/songs/<song_id>")
     def get_song(song_id: str):
+        uid = _get_uid_from_request()
         try:
             song = db.get_song_by_id(song_id)
             if not song:
                 return jsonify({"error": "Song not found"}), 404
+            if uid is not None:
+                song["is_favorite"] = db.is_song_favorite(uid, song_id)
             return jsonify(song)
         except Exception as e:
             print(f"Get song error: {e}")
@@ -490,6 +493,24 @@ def create_app() -> Flask:
             return jsonify({"uid": uid, "sid": sid}), 201
         except Exception as e:
             print(f"Favorite song error: {e}")
+            return jsonify({"error": str(e)}), 500
+
+    @app.delete("/favorites")
+    def unfavorite_song():
+        payload = request.get_json(silent=True) or {}
+        uid = _get_uid_from_request(payload)
+        sid = payload.get("sid")
+        if not uid:
+            return jsonify({"error": "uid required"}), 401
+        if not sid:
+            return jsonify({"error": "sid is required"}), 400
+        try:
+            deleted = db.unfavorite_song(int(uid), str(sid))
+            if not deleted:
+                return jsonify({"error": "favorite not found"}), 404
+            return jsonify({"uid": uid, "sid": sid, "favorited": False}), 200
+        except Exception as e:
+            print(f"Unfavorite song error: {e}")
             return jsonify({"error": str(e)}), 500
 
     @app.get("/users/<int:uid>/favorites")

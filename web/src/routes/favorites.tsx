@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Heart } from 'lucide-react'
 
 import { Input } from '@/components/ui/input'
 import {
@@ -25,6 +26,7 @@ export const Route = createFileRoute('/favorites')({
 
 function FavoritesPage() {
   const [uid, setUid] = useState('1')
+  const queryClient = useQueryClient()
 
   useEffect(() => {
     const stored = localStorage.getItem('resonate_auth')
@@ -52,6 +54,28 @@ function FavoritesPage() {
       return payload.favorites ?? []
     },
     staleTime: 30_000,
+  })
+
+  const unfavorite = useMutation({
+    mutationFn: async (sid: string) => {
+      const res = await fetch('/api/favorites', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': uid,
+        },
+        body: JSON.stringify({ sid }),
+      })
+      const payload = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        const msg = (payload as any)?.error || 'Failed to remove favorite'
+        throw new Error(msg)
+      }
+      return payload
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['favorites', uid] })
+    },
   })
 
   const content = (() => {
@@ -105,8 +129,16 @@ function FavoritesPage() {
                 {fav.artist_names || 'Unknown artist'} • {fav.album_title || 'Unknown album'}
               </CardDescription>
             </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              Favorited at {new Date(fav.favored_at).toLocaleString()}
+            <CardContent className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
+              <span>Favorited at {new Date(fav.favored_at).toLocaleString()}</span>
+              <button
+                className="flex items-center gap-1 text-destructive text-xs font-semibold"
+                onClick={() => unfavorite.mutate(fav.sid)}
+                disabled={unfavorite.isPending}
+              >
+                <Heart className="h-4 w-4" />
+                {unfavorite.isPending ? 'Unfavoriting...' : 'Unfavorite'}
+              </button>
             </CardContent>
           </Card>
         ))}

@@ -331,6 +331,18 @@ class DB:
         with conn.cursor() as cur:
             cur.execute(sql, (uid, sid))
 
+    def unfavorite_song(self, uid: int, sid: str) -> bool:
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM user_favorite_song WHERE uid = %s AND sid = %s", (uid, sid))
+            return cur.rowcount > 0
+
+    def is_song_favorite(self, uid: int, sid: str) -> bool:
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            cur.execute("SELECT 1 FROM user_favorite_song WHERE uid = %s AND sid = %s LIMIT 1", (uid, sid))
+            return cur.fetchone() is not None
+
     def list_favorites(self, uid: int) -> List[Dict[str, Any]]:
         sql = self._sql("list_favorites.sql")
         conn = self._ensure_conn()
