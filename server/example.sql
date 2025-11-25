@@ -64,14 +64,6 @@ ON DUPLICATE KEY UPDATE
   disc_no = VALUES(disc_no),
   track_no = VALUES(track_no);
 
-INSERT INTO tags (tid, name)
-VALUES
-  (1, 'chill'),
-  (2, 'focus'),
-  (3, 'energy')
-ON DUPLICATE KEY UPDATE
-  name = VALUES(name);
-
 INSERT INTO playlists (plstid, uid, name, description, visibility, created_at)
 VALUES
   (1, 1, 'Coding Flow', 'Songs for deep work', 'public', '2024-04-01 09:00:00'),

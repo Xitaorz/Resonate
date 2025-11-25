@@ -2,7 +2,7 @@ const TAG_ICON_MAP: Record<string, { icon: string; label: string }> = {
   party:    { icon: "🎉", label: "Party" },
   workout:  { icon: "🏋️‍♂️", label: "Workout" },
   sleeping: { icon: "🌙", label: "Sleeping" },
-  relaxing: { icon: "🛋️", label: "Relaxing" },
+  relaxing: { icon: "🛋️", label: "Chill" },
   romantic: { icon: "💘", label: "Romantic" },
   sad:      { icon: "😢", label: "Sad" },
 };
