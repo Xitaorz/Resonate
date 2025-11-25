@@ -4,6 +4,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Pencil } from 'lucide-react'
 
 import {
+  fetchUserProfile,
+  updateUserProfile,
+  type UpdateUserPayload,
+  type UserProfile,
+} from '@/api/users'
+import {
   Card,
   CardContent,
   CardDescription,
@@ -24,66 +30,7 @@ import {
 
 import { UserLookupForm } from '@/components/user-profile/UserLookupForm'
 import { UserProfileSkeleton } from '@/components/user-profile/UserProfileSkeleton'
-import { UserProfileForm, type UpdateUserInput } from '@/components/user-profile/UserProfileForm'
-
-type UserProfile = {
-  uid: number
-  username: string
-  email: string
-  gender: string | null
-  age: number | null
-  street: string | null
-  city: string | null
-  province: string | null
-  mbti: string | null
-  hobbies: string[]
-  created_at?: string
-  updated_at?: string
-}
-
-const fetchUserProfile = async (uid: string): Promise<UserProfile> => {
-  const res = await fetch(`/api/users/${uid}`)
-
-  let body: any = {}
-  try {
-    body = await res.json()
-  } catch {
-    body = {}
-  }
-
-  if (!res.ok || body?.error) {
-    const message = typeof body?.error === 'string' ? body.error : `Unable to load user ${uid}`
-    throw new Error(message)
-  }
-
-  return body as UserProfile
-}
-
-type UpdateUserPayload = UpdateUserInput
-
-const updateUserProfile = async (uid: string, payload: UpdateUserPayload): Promise<UserProfile> => {
-  const res = await fetch(`/api/users/${uid}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  })
-
-  let body: any = {}
-  try {
-    body = await res.json()
-  } catch {
-    body = {}
-  }
-
-  if (!res.ok || body?.error) {
-    const message = typeof body?.error === 'string' ? body.error : `Failed to update user ${uid}`
-    throw new Error(message)
-  }
-
-  return body as UserProfile
-}
+import { UserProfileForm } from '@/components/user-profile/UserProfileForm'
 
 export const Route = createFileRoute('/users/$uid')({
   component: UserProfilePage,

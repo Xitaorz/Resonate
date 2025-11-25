@@ -1,36 +1,13 @@
 import { useEffect, useState } from 'react'
 
+import type { UpdateUserPayload, UserProfile } from '@/api/users'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
-type UserProfile = {
-  uid: number
-  username: string
-  email: string
-  gender: string | null
-  age: number | null
-  street: string | null
-  city: string | null
-  province: string | null
-  mbti: string | null
-  hobbies: string[]
-}
-
-export type UpdateUserInput = {
-  username: string
-  email: string
-  gender: string | null
-  age: number | null
-  street: string | null
-  city: string | null
-  province: string | null
-  mbti: string | null
-  hobbies: string[]
-}
-
 type Props = {
   profile: UserProfile
-  onSubmit: (payload: UpdateUserInput) => void
+  onSubmit: (payload: UpdateUserPayload) => void
   isSubmitting: boolean
   errorMessage?: string | null
   lastSaved?: Date | null

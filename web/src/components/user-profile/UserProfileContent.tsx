@@ -7,20 +7,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 
-type UserProfile = {
-  uid: number
-  username: string
-  email: string
-  gender: string | null
-  age: number | null
-  street: string | null
-  city: string | null
-  province: string | null
-  mbti: string | null
-  hobbies: string[]
-  created_at?: string
-  updated_at?: string
-}
+import type { UserProfile } from '@/api/users'
 
 type Props = {
   profile: UserProfile
