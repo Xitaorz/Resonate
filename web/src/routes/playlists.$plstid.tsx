@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -28,6 +28,7 @@ export const Route = createFileRoute('/playlists/$plstid')({
 
 function PlaylistDetailPage() {
   const { plstid } = Route.useParams()
+  const navigate = useNavigate()
 
   const { data, isLoading, error, refetch, isFetching } = useQuery<PlaylistDetail, Error>({
     queryKey: ['playlist-detail', plstid],
@@ -100,7 +101,20 @@ function PlaylistDetailPage() {
               <p className="text-sm text-muted-foreground">No songs added yet.</p>
             ) : (
               songs.map((song) => (
-                <div key={song.sid} className="flex items-center justify-between py-3 gap-4">
+                <div
+                  key={song.sid}
+                  className="flex items-center justify-between py-3 gap-4 rounded-lg px-2 -mx-2 cursor-pointer transition hover:bg-muted/40 focus:outline-none focus:ring-2 focus:ring-primary"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => navigate({ to: '/songs/$sid', params: { sid: song.sid } })}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      navigate({ to: '/songs/$sid', params: { sid: song.sid } })
+                    }
+                  }}
+                  aria-label={`View details for ${song.song_title}`}
+                >
                   <div className="flex items-center gap-4">
                     <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold">
                       {song.position}
