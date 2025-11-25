@@ -29,13 +29,21 @@ def init_db() -> None:
     weekly_event = load_sql("src/sql/weekly-ranking-event.sql")
     tags_sql = load_sql("src/sql/tags.sql")
     virtual_tags_sql = load_sql("src/sql/virtual_tags.sql")
-    db.execute_script(schema_sql)
-    db.execute_script(example_sql)
-    db.execute_script(large_sample)
-    db.execute_script(weekly_view)
-    db.execute_script(weekly_refresh)
-    db.execute_script(tags_sql)
-    db.execute_script(virtual_tags_sql)
+    
+    init_queries = {
+        "schema": schema_sql,
+        "tags": tags_sql,
+        "virtual_tags": virtual_tags_sql,
+        "example": example_sql,
+        "large_sample": large_sample,
+        "weekly_view": weekly_view,
+        "weekly_refresh": weekly_refresh,
+    }
+
+    for query in init_queries:
+        db.execute_script(init_queries[query])
+        print(f"Executed {query}.")
+
     try:
         db.execute_script(weekly_event)
     except Exception as event_err:

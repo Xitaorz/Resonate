@@ -100,13 +100,6 @@ CREATE TABLE IF NOT EXISTS tags (
   name VARCHAR(100) NOT NULL UNIQUE
 );
 
-
--- tags for each album via its songs
-CREATE OR REPLACE VIEW album_tag_view AS
-SELECT DISTINCT asg.alid, st.tid
-FROM album_song AS asg
-JOIN song_tag  AS st ON st.sid = asg.sid;
-
 CREATE TABLE IF NOT EXISTS playlists (
   plstid      BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   uid         BIGINT UNSIGNED NOT NULL,

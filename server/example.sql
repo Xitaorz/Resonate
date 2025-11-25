@@ -72,14 +72,6 @@ VALUES
 ON DUPLICATE KEY UPDATE
   name = VALUES(name);
 
-INSERT INTO song_tag (sid, tid)
-VALUES
-  ('SNG001', 1),
-  ('SNG002', 2),
-  ('SNG003', 3)
-ON DUPLICATE KEY UPDATE
-  tid = VALUES(tid);
-
 INSERT INTO playlists (plstid, uid, name, description, visibility, created_at)
 VALUES
   (1, 1, 'Coding Flow', 'Songs for deep work', 'public', '2024-04-01 09:00:00'),
