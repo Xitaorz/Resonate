@@ -182,9 +182,9 @@ function UserProfilePage() {
 
         <Dialog open={showPlaylists} onOpenChange={setShowPlaylists}>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-auto pt-4">
-            <DialogHeader>
+            <DialogHeader className="pl-2">
               <DialogTitle>User playlists</DialogTitle>
-              <DialogDescription>Playlists for user {uid}.</DialogDescription>
+              <DialogDescription className="pl-1">Playlists for user {uid}.</DialogDescription>
             </DialogHeader>
             {playlistsLoading ? (
               <Card className="animate-pulse bg-muted/30">
