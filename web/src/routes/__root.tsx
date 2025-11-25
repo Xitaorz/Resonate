@@ -46,7 +46,6 @@ export const Route = createRootRoute({
 
     const navItems = [
       { to: '/', label: 'Search', icon: Home },
-      { to: '/ratings', label: 'Ratings', icon: Star },
       { to: '/weekly-ranking', label: 'Weekly Ranking', icon: TrendingUp },
       { to: '/users/$uid', label: 'User Profile', icon: User, params: { uid: currentUserId }, matchPrefix: '/users' },
       { to: '/playlists', label: 'Playlists', icon: User, matchPrefix: '/playlists' },

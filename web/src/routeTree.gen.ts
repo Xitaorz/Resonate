@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WeeklyRankingRouteImport } from './routes/weekly-ranking'
-import { Route as RatingsRouteImport } from './routes/ratings'
 import { Route as PlaylistsRouteImport } from './routes/playlists'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as IndexRouteImport } from './routes/index'
@@ -22,11 +21,6 @@ import { Route as ArtistArtistIdRouteImport } from './routes/artist.$artistId'
 const WeeklyRankingRoute = WeeklyRankingRouteImport.update({
   id: '/weekly-ranking',
   path: '/weekly-ranking',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RatingsRoute = RatingsRouteImport.update({
-  id: '/ratings',
-  path: '/ratings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PlaylistsRoute = PlaylistsRouteImport.update({
@@ -69,7 +63,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/favorites': typeof FavoritesRoute
   '/playlists': typeof PlaylistsRouteWithChildren
-  '/ratings': typeof RatingsRoute
   '/weekly-ranking': typeof WeeklyRankingRoute
   '/artist/$artistId': typeof ArtistArtistIdRoute
   '/playlists/$plstid': typeof PlaylistsPlstidRoute
@@ -80,7 +73,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/favorites': typeof FavoritesRoute
   '/playlists': typeof PlaylistsRouteWithChildren
-  '/ratings': typeof RatingsRoute
   '/weekly-ranking': typeof WeeklyRankingRoute
   '/artist/$artistId': typeof ArtistArtistIdRoute
   '/playlists/$plstid': typeof PlaylistsPlstidRoute
@@ -92,7 +84,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/favorites': typeof FavoritesRoute
   '/playlists': typeof PlaylistsRouteWithChildren
-  '/ratings': typeof RatingsRoute
   '/weekly-ranking': typeof WeeklyRankingRoute
   '/artist/$artistId': typeof ArtistArtistIdRoute
   '/playlists/$plstid': typeof PlaylistsPlstidRoute
@@ -105,7 +96,6 @@ export interface FileRouteTypes {
     | '/'
     | '/favorites'
     | '/playlists'
-    | '/ratings'
     | '/weekly-ranking'
     | '/artist/$artistId'
     | '/playlists/$plstid'
@@ -116,7 +106,6 @@ export interface FileRouteTypes {
     | '/'
     | '/favorites'
     | '/playlists'
-    | '/ratings'
     | '/weekly-ranking'
     | '/artist/$artistId'
     | '/playlists/$plstid'
@@ -127,7 +116,6 @@ export interface FileRouteTypes {
     | '/'
     | '/favorites'
     | '/playlists'
-    | '/ratings'
     | '/weekly-ranking'
     | '/artist/$artistId'
     | '/playlists/$plstid'
@@ -139,7 +127,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   FavoritesRoute: typeof FavoritesRoute
   PlaylistsRoute: typeof PlaylistsRouteWithChildren
-  RatingsRoute: typeof RatingsRoute
   WeeklyRankingRoute: typeof WeeklyRankingRoute
   ArtistArtistIdRoute: typeof ArtistArtistIdRoute
   SongsSidRoute: typeof SongsSidRoute
@@ -153,13 +140,6 @@ declare module '@tanstack/react-router' {
       path: '/weekly-ranking'
       fullPath: '/weekly-ranking'
       preLoaderRoute: typeof WeeklyRankingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/ratings': {
-      id: '/ratings'
-      path: '/ratings'
-      fullPath: '/ratings'
-      preLoaderRoute: typeof RatingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/playlists': {
@@ -230,7 +210,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FavoritesRoute: FavoritesRoute,
   PlaylistsRoute: PlaylistsRouteWithChildren,
-  RatingsRoute: RatingsRoute,
   WeeklyRankingRoute: WeeklyRankingRoute,
   ArtistArtistIdRoute: ArtistArtistIdRoute,
   SongsSidRoute: SongsSidRoute,
