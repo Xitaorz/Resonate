@@ -317,6 +317,14 @@ class DB:
             row = cur.fetchone()
         return row
 
+    def delete_playlist(self, plstid: int, uid: Optional[int] = None) -> bool:
+        """Delete a playlist (and cascaded songs). If uid provided, enforce ownership."""
+        sql = self._sql("delete_playlist.sql")
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            cur.execute(sql, (plstid, uid, uid))
+            return cur.rowcount > 0
+
     def list_playlist_songs(self, plstid: int) -> List[Dict[str, Any]]:
         sql = self._sql("list_playlist_songs.sql")
         conn = self._ensure_conn()

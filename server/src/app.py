@@ -476,6 +476,27 @@ def create_app() -> Flask:
             print(f"Get playlist error: {e}")
             return jsonify({"error": str(e)}), 500
 
+    @app.delete("/playlists/<int:plstid>")
+    def delete_playlist(plstid: int):
+        playlist = db.get_playlist(plstid)
+        if not playlist:
+            return jsonify({"error": "playlist not found"}), 404
+
+        auth_uid = _get_uid_from_request()
+        if auth_uid is None:
+            return jsonify({"error": "uid required"}), 401
+        if auth_uid != int(playlist.get("uid", -1)):
+            return jsonify({"error": "forbidden"}), 403
+
+        try:
+            deleted = db.delete_playlist(plstid, auth_uid)
+            if not deleted:
+                return jsonify({"error": "playlist not found"}), 404
+            return jsonify({"playlist_id": plstid, "deleted": True}), 200
+        except Exception as e:
+            print(f"Delete playlist error: {e}")
+            return jsonify({"error": "Failed to delete playlist"}), 500
+
     @app.post("/favorites")
     def favorite_song():
         payload = request.get_json(silent=True) or {}
