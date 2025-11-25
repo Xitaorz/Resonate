@@ -8,6 +8,8 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 
+import { AuroraText } from '@/components/ui/aurora-text'
+
 type Props = {
   profile: UserProfile
   footerSlot?: React.ReactNode
@@ -40,7 +42,13 @@ export default function UserProfileContent({ profile, footerSlot }: Props) {
     <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
       <Card>
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl">{profile.username}</CardTitle>
+          <CardTitle className="text-2xl">
+            {profile.isvip === 1 ? (
+              <AuroraText className='text-2xl font-bold'>{profile.username}</AuroraText>
+            ) : (
+              profile.username
+            )}
+          </CardTitle>
           <CardDescription>{profile.email}</CardDescription>
           <p className="text-sm text-muted-foreground">
             Member since {formatDate(profile.created_at)}

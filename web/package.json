@@ -44,6 +44,7 @@
     "globals": "^16.5.0",
     "jit": "^0.1.1",
     "jsdom": "^27.0.0",
+    "shadcn": "^3.5.0",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.47.0",
     "vite": "^7.1.7",

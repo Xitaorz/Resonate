@@ -76,7 +76,7 @@ function UserProfilePage() {
   const handleSubmit = () => {
     const nextId = userIdInput.trim()
     if (!nextId) return
-    navigate({ to: '/users/$uid', params: { uid: nextId } })
+    void navigate({ to: '/users/$uid', params: { uid: nextId } })
   }
 
   const {
@@ -111,8 +111,8 @@ function UserProfilePage() {
               value={userIdInput}
               onChange={setUserIdInput}
               onSubmit={handleSubmit}
-              onRefresh={() => refetch()}
               onShowPlaylists={() => setShowPlaylists(true)}
+              onRefresh={() => void refetch()}
               canSubmit={Boolean(userIdInput.trim())}
               isRefreshing={isFetching}
             />
@@ -132,7 +132,7 @@ function UserProfilePage() {
                 value={userIdInput}
                 onChange={setUserIdInput}
                 onSubmit={handleSubmit}
-                onRefresh={() => refetch()}
+                onRefresh={() => void refetch()}
                 canSubmit={Boolean(userIdInput.trim())}
                 isRefreshing={isFetching}
               />
