@@ -49,11 +49,11 @@ export default function UserProfileContent({ profile, footerSlot }: Props) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
-            <InfoRow label="User ID" value={profile.uid.toString()} />
+            <InfoRow label="User ID" value={String(profile.uid ?? '—')} />
             <InfoRow label="Gender" value={profile.gender || '—'} />
             <InfoRow
               label="Age"
-              value={profile.age !== null ? profile.age.toString() : '—'}
+              value={profile.age !== null && profile.age !== undefined ? String(profile.age) : '—'}
             />
             <InfoRow label="MBTI" value={profile.mbti || '—'} />
             <InfoRow label="Location" value={location} />
