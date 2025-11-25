@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Heart } from 'lucide-react'
 
@@ -122,25 +122,35 @@ function FavoritesPage() {
     return (
       <div className="grid gap-3">
         {data.map((fav) => (
-          <Card key={fav.sid} className="hover:border-primary/50 transition-colors">
-            <CardHeader>
-              <CardTitle className="text-lg">{fav.song_title}</CardTitle>
-              <CardDescription>
-                {fav.artist_names || 'Unknown artist'} • {fav.album_title || 'Unknown album'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
-              <span>Favorited at {new Date(fav.favored_at).toLocaleString()}</span>
-              <button
-                className="flex items-center gap-1 text-destructive text-xs font-semibold"
-                onClick={() => unfavorite.mutate(fav.sid)}
-                disabled={unfavorite.isPending}
-              >
-                <Heart className="h-4 w-4" />
-                {unfavorite.isPending ? 'Unfavoriting...' : 'Unfavorite'}
-              </button>
-            </CardContent>
-          </Card>
+          <Link
+            key={fav.sid}
+            to="/songs/$sid"
+            params={{ sid: fav.sid }}
+            className="block"
+          >
+            <Card className="hover:border-primary/50 transition-colors hover:-translate-y-[1px]">
+              <CardHeader>
+                <CardTitle className="text-lg">{fav.song_title}</CardTitle>
+                <CardDescription>
+                  {fav.artist_names || 'Unknown artist'} • {fav.album_title || 'Unknown album'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
+                <span>Favorited at {new Date(fav.favored_at).toLocaleString()}</span>
+                <button
+                  className="flex items-center gap-1 text-destructive text-xs font-semibold"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    unfavorite.mutate(fav.sid)
+                  }}
+                  disabled={unfavorite.isPending}
+                >
+                  <Heart className="h-4 w-4" />
+                  {unfavorite.isPending ? 'Unfavoriting...' : 'Unfavorite'}
+                </button>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
     )
