@@ -1,3 +1,4 @@
+import type { UserProfile } from '@/api/users'
 import {
   Card,
   CardContent,
@@ -6,8 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-
-import type { UserProfile } from '@/api/users'
 
 type Props = {
   profile: UserProfile
@@ -65,7 +64,7 @@ export default function UserProfileContent({ profile, footerSlot }: Props) {
             <InfoRow label="Province" value={profile.province || '—'} />
           </div>
         </CardContent>
-        {footerSlot ? <CardFooter>{footerSlot}</CardFooter> : null}
+        <CardFooter className="flex flex-wrap gap-2">{footerSlot}</CardFooter>
       </Card>
 
       <Card>

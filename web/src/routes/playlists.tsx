@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Outlet, createFileRoute, Link } from '@tanstack/react-router'
+import { useMemo, useState } from 'react'
+import { Outlet, createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { Input } from '@/components/ui/input'
@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { useAuth } from '@/hooks/use-auth'
 
 type Playlist = {
   plstid: number
@@ -26,23 +27,12 @@ export const Route = createFileRoute('/playlists')({
 })
 
 function PlaylistsPage() {
-  const [uid, setUid] = useState<string | null>(null)
+  const auth = useAuth()
+  const uid = auth?.user?.uid ? String(auth.user.uid) : ''
+  const isAuthed = Boolean(uid)
   const [form, setForm] = useState({ name: '', description: '', visibility: 'public' })
   const queryClient = useQueryClient()
-
-  useEffect(() => {
-    const stored = localStorage.getItem('resonate_auth')
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored)
-        if (parsed?.user?.uid) {
-          setUid(String(parsed.user.uid))
-        }
-      } catch {
-        setUid(null)
-      }
-    }
-  }, [])
+  const navigate = useNavigate()
 
   const { data, isLoading, error, refetch, isFetching } = useQuery<Playlist[], Error>({
     queryKey: ['playlists-page', uid],
@@ -52,18 +42,13 @@ function PlaylistsPage() {
       const payload = await res.json()
       return payload.playlists ?? []
     },
-    enabled: Boolean(uid),
+    enabled: isAuthed,
     staleTime: 30_000,
   })
 
-  useEffect(() => {
-    if (uid) {
-      refetch()
-    }
-  }, [uid, refetch])
-
   const createPlaylist = useMutation({
     mutationFn: async () => {
+      if (!isAuthed) throw new Error('Log in required')
       const res = await fetch('/api/playlists', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-User-Id': uid! },
@@ -93,7 +78,7 @@ function PlaylistsPage() {
   )
 
   const content = (() => {
-    if (!uid) {
+    if (!isAuthed) {
       return (
         <Card>
           <CardHeader>
@@ -142,7 +127,12 @@ function PlaylistsPage() {
     return (
         <div className="grid gap-3">
           {data.map((pl) => (
-            <Card key={pl.plstid} className="hover:border-primary/50 transition-colors">
+            <button
+              key={pl.plstid}
+              className="text-left"
+              onClick={() => navigate({ to: '/playlist/$plstid', params: { plstid: String(pl.plstid) } })}
+            >
+              <Card className="hover:border-primary/50 transition-colors">
               <CardHeader>
                 <CardTitle className="text-lg">{pl.name}</CardTitle>
                 <CardDescription className="line-clamp-2">
@@ -153,15 +143,9 @@ function PlaylistsPage() {
                 <div className="text-sm text-muted-foreground">
                   {pl.visibility} • {new Date(pl.created_at).toLocaleString()}
                 </div>
-                <Link
-                  to="/playlists/$plstid"
-                  params={{ plstid: String(pl.plstid) }}
-                  className="text-primary hover:underline"
-                >
-                  View
-                </Link>
               </CardContent>
             </Card>
+            </button>
           ))}
         </div>
     )
@@ -175,12 +159,12 @@ function PlaylistsPage() {
             <div>
               <h1 className="text-3xl font-semibold tracking-tight">Your Playlists</h1>
               <p className="text-muted-foreground">
-                {uid ? 'Playlists for your account.' : authRequiredCopy.description}
+                {isAuthed ? 'Playlists for your account.' : authRequiredCopy.description}
               </p>
             </div>
           </div>
           {content}
-          {uid ? (
+          {isAuthed ? (
             <div className="grid gap-2 p-4 border rounded-xl border-border/60 bg-muted/30">
               <h3 className="font-semibold">Create playlist</h3>
               <Input
@@ -209,11 +193,15 @@ function PlaylistsPage() {
               >
                 {createPlaylist.isPending ? 'Creating...' : 'Create playlist'}
               </Button>
+              {createPlaylist.isError ? (
+                <p className="text-sm text-destructive">
+                  {(createPlaylist.error as Error).message || 'Failed to create playlist'}
+                </p>
+              ) : null}
             </div>
           ) : null}
         </div>
       </div>
-      <Outlet />
     </>
   )
 }

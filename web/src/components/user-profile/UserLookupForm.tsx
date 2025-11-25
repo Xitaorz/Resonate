@@ -6,6 +6,7 @@ type UserLookupFormProps = {
   onChange: (next: string) => void
   onSubmit: () => void
   onRefresh: () => void
+  onShowPlaylists?: () => void
   canSubmit: boolean
   isRefreshing: boolean
 }
@@ -15,6 +16,7 @@ export function UserLookupForm({
   onChange,
   onSubmit,
   onRefresh,
+  onShowPlaylists,
   canSubmit,
   isRefreshing,
 }: UserLookupFormProps) {
@@ -39,6 +41,17 @@ export function UserLookupForm({
         <Button type="submit" disabled={!canSubmit}>
           View profile
         </Button>
+        {onShowPlaylists ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="bg-white text-foreground hover:bg-white/90"
+            onClick={onShowPlaylists}
+            disabled={!canSubmit}
+          >
+            Show playlists
+          </Button>
+        ) : null}
         <Button
           type="button"
           variant="outline"

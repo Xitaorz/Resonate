@@ -44,6 +44,7 @@ function UserProfilePage() {
   const [userIdInput, setUserIdInput] = useState(uid)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [editOpen, setEditOpen] = useState(false)
+  const [showPlaylists, setShowPlaylists] = useState(false)
   const queryClient = useQueryClient()
 
   useEffect(() => {
@@ -78,6 +79,23 @@ function UserProfilePage() {
     navigate({ to: '/users/$uid', params: { uid: nextId } })
   }
 
+  const {
+    data: playlists = [],
+    isFetching: playlistsLoading,
+    error: playlistsError,
+    refetch: refetchPlaylists,
+  } = useQuery({
+    queryKey: ['user-playlists-dialog', uid],
+    enabled: showPlaylists,
+    queryFn: async () => {
+      const res = await fetch(`/api/users/${uid}/playlists`, { headers: { 'X-User-Id': uid } })
+      if (!res.ok) throw new Error('Failed to load playlists')
+      const payload = await res.json()
+      return payload.playlists ?? []
+    },
+    staleTime: 30_000,
+  })
+
   return (
     <div className="flex justify-center px-4 py-10">
       <div className="w-full max-w-5xl space-y-6">
@@ -94,6 +112,7 @@ function UserProfilePage() {
               onChange={setUserIdInput}
               onSubmit={handleSubmit}
               onRefresh={() => refetch()}
+              onShowPlaylists={() => setShowPlaylists(true)}
               canSubmit={Boolean(userIdInput.trim())}
               isRefreshing={isFetching}
             />
@@ -160,6 +179,69 @@ function UserProfilePage() {
             </DialogContent>
           </Dialog>
         ) : null}
+
+        <Dialog open={showPlaylists} onOpenChange={setShowPlaylists}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-auto pt-4">
+            <DialogHeader>
+              <DialogTitle>User playlists</DialogTitle>
+              <DialogDescription>Playlists for user {uid}.</DialogDescription>
+            </DialogHeader>
+            {playlistsLoading ? (
+              <Card className="animate-pulse bg-muted/30">
+                <div className="h-20 rounded-lg bg-muted" />
+              </Card>
+            ) : playlistsError ? (
+              <Card className="border-destructive/40 bg-destructive/10">
+                <CardHeader>
+                  <CardTitle className="text-destructive">Unable to load playlists</CardTitle>
+                  <CardDescription>{(playlistsError as Error).message}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button variant="destructive" size="sm" onClick={() => refetchPlaylists()}>
+                    Try again
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : playlists.length === 0 ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>No playlists found</CardTitle>
+                  <CardDescription>This user has not created any playlists yet.</CardDescription>
+                </CardHeader>
+              </Card>
+            ) : (
+              <div className="grid gap-2">
+                {playlists.map((pl: any) => (
+                  <button
+                    key={pl.plstid}
+                    className="text-left"
+                    onClick={() => {
+                      setShowPlaylists(false)
+                      navigate({ to: '/playlist/$plstid', params: { plstid: String(pl.plstid) } })
+                    }}
+                  >
+                    <Card className="hover:border-primary/50 transition-colors">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base">{pl.name}</CardTitle>
+                        <CardDescription className="line-clamp-2">
+                          {pl.description || 'No description'}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="text-xs text-muted-foreground">
+                        {pl.visibility} • {new Date(pl.created_at).toLocaleString()}
+                      </CardContent>
+                    </Card>
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="mt-4 flex justify-end">
+              <Button variant="outline" onClick={() => setShowPlaylists(false)}>
+                Go back
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )
