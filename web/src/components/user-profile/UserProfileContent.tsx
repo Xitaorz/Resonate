@@ -1,3 +1,4 @@
+import type { UserProfile } from '@/api/users'
 import {
   Card,
   CardContent,
@@ -6,8 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-
-import type { UserProfile } from '@/api/users'
 
 type Props = {
   profile: UserProfile
@@ -49,11 +48,11 @@ export default function UserProfileContent({ profile, footerSlot }: Props) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
-            <InfoRow label="User ID" value={profile.uid.toString()} />
+            <InfoRow label="User ID" value={String(profile.uid ?? '—')} />
             <InfoRow label="Gender" value={profile.gender || '—'} />
             <InfoRow
               label="Age"
-              value={profile.age !== null ? profile.age.toString() : '—'}
+              value={profile.age !== null && profile.age !== undefined ? String(profile.age) : '—'}
             />
             <InfoRow label="MBTI" value={profile.mbti || '—'} />
             <InfoRow label="Location" value={location} />
@@ -65,7 +64,7 @@ export default function UserProfileContent({ profile, footerSlot }: Props) {
             <InfoRow label="Province" value={profile.province || '—'} />
           </div>
         </CardContent>
-        {footerSlot ? <CardFooter>{footerSlot}</CardFooter> : null}
+        <CardFooter className="flex flex-wrap gap-2">{footerSlot}</CardFooter>
       </Card>
 
       <Card>
