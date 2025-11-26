@@ -74,24 +74,6 @@ export default function UserProfileContent({ profile, footerSlot }: Props) {
             />
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            <InfoRow
-              label="Playlists created"
-              value={
-                typeof profile.num_playlists === 'number'
-                  ? profile.num_playlists.toString()
-                  : '0'
-              }
-            />
-            <InfoRow
-              label="Songs favorited"
-              value={
-                typeof profile.num_favorites === 'number'
-                  ? profile.num_favorites.toString()
-                  : '0'
-              }
-            />
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
             <InfoRow label="User ID" value={profile.uid.toString()} />
             <InfoRow label="Gender" value={profile.gender || '—'} />
             <InfoRow
