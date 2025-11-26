@@ -46,24 +46,6 @@ VALUES
 ON DUPLICATE KEY UPDATE
   artid = VALUES(artid);
 
-INSERT INTO songs (sid, name, release_date)
-VALUES
-  ('SNG001', 'Compile My Heart', '2023-11-01'),
-  ('SNG002', 'Infinite Loop', '2024-03-15'),
-  ('SNG003', 'Late Night Deploy', NULL)
-ON DUPLICATE KEY UPDATE
-  name = VALUES(name),
-  release_date = VALUES(release_date);
-
-INSERT INTO album_song (alid, sid, disc_no, track_no)
-VALUES
-  (1, 'SNG001', 1, 1),
-  (2, 'SNG002', 1, 1),
-  (2, 'SNG003', 1, 2)
-ON DUPLICATE KEY UPDATE
-  disc_no = VALUES(disc_no),
-  track_no = VALUES(track_no);
-
 INSERT INTO playlists (plstid, uid, name, description, visibility, created_at)
 VALUES
   (1, 1, 'Coding Flow', 'Songs for deep work', 'public', '2024-04-01 09:00:00'),
@@ -73,28 +55,12 @@ ON DUPLICATE KEY UPDATE
   description = VALUES(description),
   visibility = VALUES(visibility);
 
-INSERT INTO playlist_song (plstid, sid, position, added_at)
-VALUES
-  (1, 'SNG001', 1, '2024-04-01 09:05:00'),
-  (1, 'SNG003', 2, '2024-04-01 09:06:00'),
-  (2, 'SNG002', 1, '2024-04-02 10:05:00')
-ON DUPLICATE KEY UPDATE
-  position = VALUES(position),
-  added_at = VALUES(added_at);
-
 INSERT INTO user_follow_playlist (uid, plstid, followed_at)
 VALUES
   (1, 2, '2024-04-03 08:00:00'),
   (2, 1, '2024-04-04 11:30:00')
 ON DUPLICATE KEY UPDATE
   followed_at = VALUES(followed_at);
-
-INSERT INTO user_favorite_song (uid, sid, favored_at)
-VALUES
-  (1, 'SNG001', '2024-04-01 09:10:00'),
-  (2, 'SNG002', '2024-04-02 10:10:00')
-ON DUPLICATE KEY UPDATE
-  favored_at = VALUES(favored_at);
 
 INSERT INTO ratings (rid, rate_value, comment)
 VALUES
