@@ -364,9 +364,30 @@ class DB:
         with conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT uid, username, email, gender, age, street, city, province, mbti, created_at, updated_at
-                FROM users
-                WHERE uid = %s
+                SELECT
+                    u.uid,
+                    u.username,
+                    u.email,
+                    u.gender,
+                    u.age,
+                    u.street,
+                    u.city,
+                    u.province,
+                    u.mbti,
+                    u.created_at,
+                    u.updated_at,
+                    (
+                        SELECT COUNT(DISTINCT pl.plstid)
+                        FROM playlists pl
+                        WHERE pl.uid = u.uid
+                    ) AS num_playlists,
+                    (
+                        SELECT COUNT(DISTINCT ufs.sid)
+                        FROM user_favorite_song ufs
+                        WHERE ufs.uid = u.uid
+                    ) AS num_favorites
+                FROM users u
+                WHERE u.uid = %s
                 """,
                 (uid,)
             )
