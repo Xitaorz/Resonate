@@ -3,6 +3,7 @@ SELECT
     s.name,
     s.release_date,
     a.title AS album_title,
+    MIN(als.alid) AS album_id,
     ROUND(AVG(rt.rate_value), 2) AS avg_rating,
     COUNT(rt.rid) AS rating_count,
     GROUP_CONCAT(DISTINCT t.name ORDER BY t.name SEPARATOR ', ') AS tags

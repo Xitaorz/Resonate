@@ -9,12 +9,14 @@ import { RatingStars } from '@/components/RatingStars'
 import { TagIcon } from '@/components/TagIcon'
 import { Separator } from '@/components/ui/separator'
 import { useAuth } from '@/hooks/use-auth'
+import { Link } from '@tanstack/react-router'
 
 type SongDetail = {
   sid: string
   name: string
   release_date: string | null
   album_title: string | null
+  album_id?: string | null
   avg_rating: number | null
   rating_count: number
   tags: string | null
@@ -49,6 +51,7 @@ async function fetchSongDetail(sid: string): Promise<SongDetail> {
     name: data?.name ?? data?.song_name ?? 'Unknown song',
     release_date: data?.release_date ?? null,
     album_title: data?.album_title ?? data?.album_name ?? null,
+    album_id: data?.alid ?? data?.album_id ?? null,
     avg_rating: data?.avg_rating !== undefined && data?.avg_rating !== null ? Number(data.avg_rating) : null,
     rating_count: data?.rating_count !== undefined && data?.rating_count !== null ? Number(data.rating_count) : 0,
     tags: data?.tags ?? null,
@@ -367,7 +370,20 @@ function SongDetailPage() {
               <div className="rounded-lg border border-border/70 bg-muted/20 p-4">
                 <p className="text-xs font-medium uppercase text-muted-foreground">Release</p>
                 <p className="mt-2 text-sm text-foreground">{formatDate(data.release_date)}</p>
-                <p className="text-xs text-muted-foreground">Album: {data.album_title || 'Unknown album'}</p>
+                <div className="text-xs text-muted-foreground">
+                  Album:{' '}
+                  {data.album_id ? (
+                    <Link
+                      to="/albums/$albumId"
+                      params={{ albumId: data.album_id }}
+                      className="text-primary hover:underline"
+                    >
+                      {data.album_title || 'View album'}
+                    </Link>
+                  ) : (
+                    data.album_title || 'Unknown album'
+                  )}
+                </div>
               </div>
             </div>
 
