@@ -251,24 +251,34 @@ def create_app() -> Flask:
     
     @app.get("/search")
     def search():
-        query = request.args.get('q', '')
+        query = request.args.get("q", "").strip()
         if not query:
-            return jsonify({"query": "", "count": 0, "results": []})
-        
+            return jsonify({"query": "", "count": 0, "page": 1, "page_size": 0, "results": []})
+
         try:
-            results = db.search(query)
-            return jsonify({
-                "query": query,
-                "count": len(results),
-                "results": results
-            })
+            page = max(int(request.args.get("page", 1)), 1)
+            page_size = min(max(int(request.args.get("page_size", 20)), 1), 100)
+        except ValueError:
+            return jsonify({"error": "page and page_size must be integers"}), 400
+
+        try:
+            total = db.search_count(query)
+            offset = (page - 1) * page_size
+            results = db.search(query, limit=page_size, offset=offset)
+            return jsonify(
+                {
+                    "query": query,
+                    "count": len(results),
+                    "total": total,
+                    "page": page,
+                    "page_size": page_size,
+                    "has_next": (page * page_size) < total,
+                    "results": results,
+                }
+            )
         except Exception as e:
             print(f"Search endpoint error: {e}")
-            return jsonify({
-                "query": query,
-                "count": 0,
-                "results": []
-            })
+            return jsonify({"error": "Failed to search"}), 500
 
     @app.get("/albums/<album_id>/songs")
     def get_album_songs(album_id: str):
