@@ -21,6 +21,7 @@ type Result = {
   sid: string;
   song_name: string;
   artist_name: string;
+  artist_ids?: string | null;
   artist_id: string;
   release_date: string;
   album_name: string;
@@ -193,6 +194,21 @@ export function Search() {
                   title: song.song_name,
                   artist: song.artist_name,
                   artistId: song.artist_id,
+                  artists: (() => {
+                    const names = (song.artist_name || "")
+                      .split(",")
+                      .map((n) => n.trim())
+                      .filter(Boolean);
+                    const ids = (song.artist_ids || "")
+                      .split(",")
+                      .map((i) => i.trim())
+                      .filter(Boolean);
+                    if (names.length === 0) return undefined;
+                    return names.map((name, idx) => ({
+                      name,
+                      id: ids[idx],
+                    }));
+                  })(),
                   album: song.album_name,
                   tags: song.tags || null,
                 }))}

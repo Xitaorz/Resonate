@@ -9,6 +9,7 @@ type Song = {
   title: string;
   artist: string;
   artistId?: string;
+  artists?: { name: string; id?: string }[];
   album: string;
   tags?: string | null;
 }
@@ -24,7 +25,7 @@ export function SongList({ songs, action }: SongListProps) {
   const isVip = auth?.user?.isvip === 1;
 
   const openSong = (sid: string) => {
-    navigate({ to: "/songs/$sid", params: { sid } });
+    void navigate({ to: "/songs/$sid", params: { sid } });
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>, sid: string) => {
@@ -57,19 +58,32 @@ export function SongList({ songs, action }: SongListProps) {
                 </span>
               </CardTitle>
               <CardContent className="p-0 pt-2 space-y-1">
-                <p>
-                  Artist:{' '}
-                  {song.artistId ? (
-                    <Link
-                      to="/artist/$artistId"
-                      params={{ artistId: song.artistId }}
-                      className="text-blue-500 hover:underline cursor-pointer"
-                    >
-                      {song.artist}
-                    </Link>
-                  ) : (
-                    song.artist
-                  )}
+                <p className="flex flex-wrap gap-1">
+                  <span className="mr-1">Artist:</span>
+                  {(() => {
+                    const artistList =
+                      song.artists ??
+                      (song.artist
+                        ? [{ name: song.artist, id: song.artistId }]
+                        : []);
+                    return artistList.map((artist, index) => (
+                      <span key={`${song.sid}-${artist.id ?? artist.name}-${index}`}>
+                        {index > 0 ? <span className="text-muted-foreground">, </span> : null}
+                        {artist.id ? (
+                          <Link
+                            to="/artist/$artistId"
+                            params={{ artistId: artist.id }}
+                            className="text-blue-500 hover:underline cursor-pointer"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            {artist.name}
+                          </Link>
+                        ) : (
+                          artist.name
+                        )}
+                      </span>
+                    ));
+                  })()}
                 </p>
                 <p>Album: {song.album}</p>
                 {song.tags ? (
