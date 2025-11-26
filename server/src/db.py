@@ -61,7 +61,7 @@ class DB:
         if not self._config:
             raise RuntimeError("DB not initialized. Call connect() first.")
         
-        return pymysql.connect(
+        conn = pymysql.connect(
             host=self._config['host'],
             port=self._config['port'],
             user=self._config['user'],
@@ -70,6 +70,20 @@ class DB:
             cursorclass=DictCursor,
             autocommit=autocommit,
         )
+        
+        # Activate role based on user (MySQL 8.0 roles need explicit activation)
+        user = self._config['user']
+        try:
+            with conn.cursor() as cur:
+                if user == 'display_user':
+                    cur.execute("SET ROLE display_role")
+                elif user == 'admin_user':
+                    cur.execute("SET ROLE admin_role")
+        except Exception:
+            # If role activation fails, continue anyway (might not be using role-based auth)
+            pass
+        
+        return conn
     
     def get_song_by_id(self, song_id: str) -> Optional[Dict[str, Any]]:
         sql = self._sql("get_song_by_id.sql")
