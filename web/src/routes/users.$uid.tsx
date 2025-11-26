@@ -28,9 +28,9 @@ import {
   DialogClose,
 } from '@/components/ui/dialog'
 
-import { UserLookupForm } from '@/components/user-profile/UserLookupForm'
 import { UserProfileSkeleton } from '@/components/user-profile/UserProfileSkeleton'
 import { UserProfileForm } from '@/components/user-profile/UserProfileForm'
+import { useAuth } from '@/hooks/use-auth'
 
 export const Route = createFileRoute('/users/$uid')({
   component: UserProfilePage,
@@ -41,7 +41,9 @@ const UserProfileContent = lazy(() => import('@/components/user-profile/UserProf
 function UserProfilePage() {
   const { uid } = Route.useParams()
   const navigate = useNavigate()
-  const [userIdInput, setUserIdInput] = useState(uid)
+  const auth = useAuth()
+  const authedUid = auth?.user?.uid
+  const isLoggedIn = Boolean(authedUid)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [editOpen, setEditOpen] = useState(false)
   const [showPlaylists, setShowPlaylists] = useState(false)
@@ -55,13 +57,12 @@ function UserProfilePage() {
   const {
     data,
     isLoading,
-    isFetching,
     error,
-    refetch,
   } = useQuery<UserProfile, Error>({
     queryKey: ['userProfile', uid],
     queryFn: () => fetchUserProfile(uid),
     staleTime: 10_000,
+    enabled: isLoggedIn,
   })
 
   const updateMutation = useMutation<UserProfile, Error, UpdateUserPayload>({
@@ -73,10 +74,12 @@ function UserProfilePage() {
     },
   })
 
-  const handleSubmit = () => {
-    const nextId = userIdInput.trim()
-    if (!nextId) return
-    void navigate({ to: '/users/$uid', params: { uid: nextId } })
+  type PlaylistSummary = {
+    plstid: number
+    name: string
+    description: string | null
+    visibility: string
+    created_at: string
   }
 
   const {
@@ -84,17 +87,32 @@ function UserProfilePage() {
     isFetching: playlistsLoading,
     error: playlistsError,
     refetch: refetchPlaylists,
-  } = useQuery({
+  } = useQuery<PlaylistSummary[], Error>({
     queryKey: ['user-playlists-dialog', uid],
-    enabled: showPlaylists,
+    enabled: showPlaylists && isLoggedIn,
     queryFn: async () => {
-      const res = await fetch(`/api/users/${uid}/playlists`, { headers: { 'X-User-Id': uid } })
+      const res = await fetch(`/api/users/${uid}/playlists`, {
+        headers: authedUid ? { 'X-User-Id': authedUid } : undefined,
+      })
       if (!res.ok) throw new Error('Failed to load playlists')
-      const payload = await res.json()
-      return payload.playlists ?? []
+      const payload = (await res.json()) as { playlists?: PlaylistSummary[] }
+      return Array.isArray(payload.playlists) ? payload.playlists : []
     },
     staleTime: 30_000,
   })
+
+  if (!isLoggedIn) {
+    return (
+      <div className="flex justify-center px-4 py-10">
+        <Card className="w-full max-w-3xl">
+          <CardHeader>
+            <CardTitle>User Profile</CardTitle>
+            <CardDescription>Log in to see profile.</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className={`flex justify-center px-4 py-10 min-h-screen ${
@@ -118,21 +136,8 @@ function UserProfilePage() {
                 </span>
               )}
             </div>
-            <CardDescription>
-              Look up a user by id and view their profile details and hobbies.
-            </CardDescription>
+            <CardDescription>View profile details and hobbies.</CardDescription>
           </CardHeader>
-          <CardContent className="relative">
-            <UserLookupForm
-              value={userIdInput}
-              onChange={setUserIdInput}
-              onSubmit={handleSubmit}
-              onShowPlaylists={() => setShowPlaylists(true)}
-              onRefresh={() => void refetch()}
-              canSubmit={Boolean(userIdInput.trim())}
-              isRefreshing={isFetching}
-            />
-          </CardContent>
         </Card>
 
         {isLoading ? (
@@ -143,16 +148,6 @@ function UserProfilePage() {
               <CardTitle className="text-destructive">Unable to load profile</CardTitle>
               <CardDescription>{error.message}</CardDescription>
             </CardHeader>
-            <CardContent>
-              <UserLookupForm
-                value={userIdInput}
-                onChange={setUserIdInput}
-                onSubmit={handleSubmit}
-                onRefresh={() => void refetch()}
-                canSubmit={Boolean(userIdInput.trim())}
-                isRefreshing={isFetching}
-              />
-            </CardContent>
           </Card>
         ) : data ? (
           <Dialog open={editOpen} onOpenChange={setEditOpen}>
@@ -223,10 +218,16 @@ function UserProfilePage() {
               <Card className="border-destructive/40 bg-destructive/10">
                 <CardHeader>
                   <CardTitle className="text-destructive">Unable to load playlists</CardTitle>
-                  <CardDescription>{(playlistsError as Error).message}</CardDescription>
+                  <CardDescription>{playlistsError.message}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button variant="destructive" size="sm" onClick={() => refetchPlaylists()}>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      void refetchPlaylists()
+                    }}
+                  >
                     Try again
                   </Button>
                 </CardContent>
@@ -240,13 +241,13 @@ function UserProfilePage() {
               </Card>
             ) : (
               <div className="grid gap-2">
-                {playlists.map((pl: any) => (
+                {playlists.map((pl) => (
                   <button
                     key={pl.plstid}
                     className="text-left"
                     onClick={() => {
                       setShowPlaylists(false)
-                      navigate({ to: '/playlists/$plstid', params: { plstid: String(pl.plstid) } })
+                      void navigate({ to: '/playlists/$plstid', params: { plstid: String(pl.plstid) } })
                     }}
                   >
                     <Card className="hover:border-primary/50 transition-colors">
