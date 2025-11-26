@@ -19,5 +19,4 @@ WHERE LOWER(s.name)   LIKE LOWER(%s)
    OR LOWER(t.name)   LIKE LOWER(%s)
 GROUP BY s.sid, s.name, al.title, al.release_date
 ORDER BY s.name
-LIMIT 100;
-
+LIMIT %s OFFSET %s;

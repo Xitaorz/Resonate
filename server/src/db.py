@@ -131,15 +131,43 @@ class DB:
         return list(rows)
     
     #search for songs, artists, and albums
-    def search(self, query: str) -> List[Dict[str, Any]]:
+    def search(self, query: str, limit: int, offset: int) -> List[Dict[str, Any]]:
         search_pattern = f"%{query}%"
         sql = self._sql("search.sql")
         
         conn = self._ensure_conn()
         with conn.cursor() as cur:
-            cur.execute(sql, (search_pattern, search_pattern, search_pattern, search_pattern))
+            cur.execute(
+                sql,
+                (
+                    search_pattern,
+                    search_pattern,
+                    search_pattern,
+                    search_pattern,
+                    int(limit),
+                    int(offset),
+                ),
+            )
             rows = cur.fetchall()
         return list(rows)
+
+    def search_count(self, query: str) -> int:
+        search_pattern = f"%{query}%"
+        sql = self._sql("search_count.sql")
+
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            cur.execute(
+                sql,
+                (
+                    search_pattern,
+                    search_pattern,
+                    search_pattern,
+                    search_pattern,
+                ),
+            )
+            row = cur.fetchone()
+        return int(row["total"]) if row and "total" in row else 0
     
     def get_album_songs(self, album_id: str) -> List[Dict[str, Any]]:
         sql = self._sql("get_album_songs.sql")

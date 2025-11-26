@@ -5,6 +5,7 @@ import { Crown } from "lucide-react";
 import { Input } from "./ui/input";
 import { SongList } from "./SongList";
 import { Spinner } from "./ui/spinner";
+import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "./ui/pagination";
 import { useAuth } from "@/hooks/use-auth";
 import { AuroraText } from "./ui/aurora-text";
 
@@ -22,11 +23,23 @@ type SearchPayload = {
   results: Result[];
   durationMs: number;
   query: string;
+  total: number;
+  page: number;
+  page_size: number;
+  has_next: boolean;
 };
 
-async function searchSongs(query: string): Promise<SearchPayload> {
+type SearchParams = {
+  query: string;
+  page: number;
+  pageSize: number;
+};
+
+async function searchSongs({ query, page, pageSize }: SearchParams): Promise<SearchPayload> {
   const started = performance.now();
-  const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+  const res = await fetch(
+    `/api/search?q=${encodeURIComponent(query)}&page=${page}&page_size=${pageSize}`
+  );
   const elapsed = performance.now() - started;
 
   let data: any = {};
@@ -42,11 +55,21 @@ async function searchSongs(query: string): Promise<SearchPayload> {
   }
 
   const results = Array.isArray(data?.results) ? data.results : [];
-  return { results, durationMs: elapsed, query };
+  return {
+    results,
+    durationMs: elapsed,
+    query,
+    total: Number.isFinite(data?.total) ? Number(data.total) : results.length,
+    page: Number.isFinite(data?.page) ? Number(data.page) : 1,
+    page_size: Number.isFinite(data?.page_size) ? Number(data.page_size) : results.length,
+    has_next: Boolean(data?.has_next),
+  };
 }
 
 export function Search() {
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
   const auth = useAuth();
   const isVip = auth?.user?.isvip === 1;
 
@@ -56,8 +79,8 @@ export function Search() {
     isLoading,
     isFetching,
   } = useQuery<SearchPayload>({
-    queryKey: ["searchSongs", query],
-    queryFn: () => searchSongs(query),
+    queryKey: ["searchSongs", query, page, pageSize],
+    queryFn: () => searchSongs({ query, page, pageSize }),
     enabled: query.trim().length > 0,
     staleTime: 5000,
   });
@@ -96,7 +119,10 @@ export function Search() {
             <Input
               className="w-full max-w-2xl"
               value={query}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                setQuery(e.target.value);
+                setPage(1);
+              }}
               placeholder="Search songs..."
               autoFocus
             />
@@ -113,7 +139,8 @@ export function Search() {
               ) : (
                 <>
                   <span>
-                    {results.length} result{results.length === 1 ? "" : "s"}
+                    {data?.total ?? results.length} result
+                    {(data?.total ?? results.length) === 1 ? "" : "s"}
                   </span>
                   {durationText ? <span>- {durationText}</span> : null}
                 </>
@@ -142,16 +169,60 @@ export function Search() {
               ))}
             </div>
           ) : results.length > 0 ? (
-            <SongList
-              songs={results.map((song: Result) => ({
-                sid: song.sid,
-                title: song.song_name,
-                artist: song.artist_name,
-                artistId: song.artist_id,
-                album: song.album_name,
-                tags: song.tags || null,
-              }))}
-            />
+            <div className="space-y-4">
+              <SongList
+                songs={results.map((song: Result) => ({
+                  sid: song.sid,
+                  title: song.song_name,
+                  artist: song.artist_name,
+                  artistId: song.artist_id,
+                  album: song.album_name,
+                  tags: song.tags || null,
+                }))}
+              />
+              {data && (data.total > pageSize || data.has_next || page > 1) ? (
+                <div className="flex justify-center">
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (page > 1) setPage(page - 1);
+                          }}
+                        />
+                      </PaginationItem>
+                      <PaginationItem>
+                        <PaginationLink href="#" isActive>
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                      {data.has_next ? (
+                        <>
+                          <PaginationItem>
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                          <PaginationItem>
+                            <PaginationNext
+                              href="#"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setPage(page + 1);
+                              }}
+                            />
+                          </PaginationItem>
+                        </>
+                      ) : (
+                        <PaginationItem>
+                          <PaginationNext href="#" aria-disabled />
+                        </PaginationItem>
+                      )}
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              ) : null}
+            </div>
           ) : (
             <div className="rounded-lg border border-dashed border-border/60 bg-muted/30 px-4 py-10 text-center text-sm text-muted-foreground">
               No results yet. Try another query.
