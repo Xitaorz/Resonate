@@ -621,8 +621,11 @@ class DB:
             return None
         if not check_password_hash(stored_hash, password):
             return None
-        user_row.pop("password_hash", None)
-        return user_row
+        uid = user_row.get("uid")
+        if uid is None:
+            return None
+        profile = self.get_user_profile(int(uid))
+        return profile
 
 
     def ping(self) -> bool:

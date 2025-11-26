@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 
-type AuthUser = {
+export type AuthUser = {
   uid: string
   username?: string
   email?: string
+  isvip?: 1 | 0
 }
 
-type AuthState = {
+export type AuthState = {
   user: AuthUser
   token: string
 }

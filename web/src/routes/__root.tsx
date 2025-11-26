@@ -2,7 +2,7 @@ import { Outlet, createRootRoute, useRouterState, Link } from '@tanstack/react-r
 import { Suspense, lazy, useEffect, useState } from 'react'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
-import { Heart, Home, Sparkles, TrendingUp, User, Bookmark } from 'lucide-react'
+import { Crown, Heart, Home, Sparkles, TrendingUp, User, Bookmark } from 'lucide-react'
 
 import {
   Sidebar,
@@ -20,10 +20,20 @@ import {
 } from '@/components/ui/sidebar'
 import { Dialog, DialogTrigger } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { useAuth } from '@/hooks/use-auth'
+import { useAuth, type AuthUser } from '@/hooks/use-auth'
 
 const LoginDialog = lazy(() => import('@/components/auth/LoginDialog'))
 const SignupDialog = lazy(() => import('@/components/auth/SignupDialog'))
+
+const normalizeUser = (user: any): AuthUser => {
+  const isvip: 1 | 0 = user?.isvip === 1 ? 1 : 0
+  return {
+    uid: String(user?.uid ?? ''),
+    username: user?.username,
+    email: user?.email,
+    isvip,
+  }
+}
 
 export const Route = createRootRoute({
   component: () => {
@@ -31,7 +41,6 @@ export const Route = createRootRoute({
     const pathname = useRouterState({
       select: (state) => state.location.pathname,
     })
-    
     const [username, setUsername] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
@@ -41,8 +50,22 @@ export const Route = createRootRoute({
     const [signupOpen, setSignupOpen] = useState(false)
     const [loggingIn, setLoggingIn] = useState(false)
     const [signingUp, setSigningUp] = useState(false)
-    
-    const currentUserId = auth?.user?.uid || '1'
+    const [vipLoading, setVipLoading] = useState(false)
+    const [vipError, setVipError] = useState<string | null>(null)
+
+    const persistAuth = (userData: any, token: string) => {
+      const normalizedUser = normalizeUser(userData)
+      if (!normalizedUser.uid || !token) {
+        setAuth(null)
+        localStorage.removeItem('resonate_auth')
+        return
+      }
+      const payload = { user: normalizedUser, token }
+      setAuth(payload)
+      localStorage.setItem('resonate_auth', JSON.stringify(payload))
+    }
+
+    const currentUserId = String(auth?.user?.uid ?? '1')
 
     const navItems = [
       { to: '/', label: 'Search', icon: Home },
@@ -56,33 +79,41 @@ export const Route = createRootRoute({
 
     useEffect(() => {
       const stored = localStorage.getItem('resonate_auth')
-      if (stored) {
-        try {
-          setAuth(JSON.parse(stored))
-        } catch {
+      if (!stored) {
+        setAuth(null)
+        return
+      }
+      try {
+        const parsed = JSON.parse(stored)
+        if (parsed?.user?.uid && parsed?.token) {
+          const normalizedUser = normalizeUser(parsed.user)
+          setAuth({ user: normalizedUser, token: parsed.token })
+        } else {
           setAuth(null)
         }
+      } catch {
+        setAuth(null)
       }
     }, [])
 
     const handleLogin = async () => {
       setLoggingIn(true)
       setAuthError(null)
+      setVipError(null)
       try {
         const res = await fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password }),
         })
-        const data = await res.json()
-        if (!res.ok || data.error) {
-          setAuthError(typeof data.error === 'string' ? data.error : 'Login failed')
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok || data?.error) {
+          setAuthError(typeof data?.error === 'string' ? data.error : 'Login failed')
         } else {
-          const payload = { user: data.user, token: data.token }
-          setAuth(payload)
-          localStorage.setItem('resonate_auth', JSON.stringify(payload))
+          persistAuth(data.user, data.token)
           setLoginOpen(false)
           setAuthError(null)
+          setVipError(null)
           setUsername('')
           setEmail('')
           setPassword('')
@@ -98,6 +129,7 @@ export const Route = createRootRoute({
     const handleSignup = async () => {
       setSigningUp(true)
       setAuthError(null)
+      setVipError(null)
       try {
         const effectiveUsername = username || email.split('@')[0] || 'user'
         const res = await fetch('/api/auth/signup', {
@@ -105,15 +137,14 @@ export const Route = createRootRoute({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username: effectiveUsername, email, password }),
         })
-        const data = await res.json()
-        if (!res.ok || data.error) {
-          setAuthError(typeof data.error === 'string' ? data.error : 'Signup failed')
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok || data?.error) {
+          setAuthError(typeof data?.error === 'string' ? data.error : 'Signup failed')
         } else {
-          const payload = { user: data.user, token: data.token }
-          setAuth(payload)
-          localStorage.setItem('resonate_auth', JSON.stringify(payload))
+          persistAuth(data.user, data.token)
           setLoginOpen(false)
           setAuthError(null)
+          setVipError(null)
           setSignupOpen(false)
           setUsername('')
           setEmail('')
@@ -127,19 +158,69 @@ export const Route = createRootRoute({
       }
     }
 
+    const handleMakeVip = async () => {
+      if (!auth?.user?.uid || !auth?.token) {
+        setVipError('Log in to upgrade to VIP')
+        return
+      }
+      setVipLoading(true)
+      setVipError(null)
+      try {
+        const res = await fetch(`/api/users/${auth.user.uid}/vip`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
+          },
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok || data?.error) {
+          throw new Error(data?.error || 'Failed to promote to VIP')
+        }
+        persistAuth({ ...auth.user, isvip: 1 }, auth.token)
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Unable to promote to VIP'
+        setVipError(message)
+      } finally {
+        setVipLoading(false)
+      }
+    }
+
     return (
       <div className="h-dvh w-dvw overscroll-none flex">
         <SidebarProvider className="overscroll-none">
           <Sidebar collapsible="icon" className="overscroll-none">
             {auth ? (
               <SidebarHeader className="border-b px-3 py-2">
-                <div className="flex flex-col gap-1">
-                  <span className="text-base font-semibold leading-tight">Resonate</span>
-                  <div className="text-xs text-muted-foreground">
-                    <div className="font-medium text-foreground">
-                      {auth.user?.username || auth.user?.email}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 flex-col gap-1">
+                    <span className="text-base font-semibold leading-tight">Resonate</span>
+                    <div className="text-xs text-muted-foreground">
+                      <div className="font-medium text-foreground line-clamp-1">
+                        {auth.user?.username || auth.user?.email}
+                      </div>
+                      <div className="truncate">{auth.user?.email}</div>
                     </div>
-                    <div className="truncate">{auth.user?.email}</div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    {auth.user?.isvip === 1 ? (
+                      <div className="flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-[11px] font-semibold text-amber-800">
+                        <Crown className="size-3" />
+                        VIP
+                      </div>
+                    ) : (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="gap-2"
+                        onClick={handleMakeVip}
+                        disabled={vipLoading}
+                      >
+                        <Crown className="size-4" />
+                        {vipLoading ? 'Adding...' : 'Make VIP'}
+                      </Button>
+                    )}
+                    {vipError ? <span className="text-[11px] text-destructive">{vipError}</span> : null}
                   </div>
                 </div>
               </SidebarHeader>
@@ -245,6 +326,8 @@ export const Route = createRootRoute({
                   className="w-full justify-start"
                   onClick={() => {
                     setAuth(null)
+                    setVipError(null)
+                    setVipLoading(false)
                     localStorage.removeItem('resonate_auth')
                   }}
                 >
