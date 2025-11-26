@@ -49,7 +49,7 @@ function formatYearWeek(yearweek: number): string {
 function WeeklyRankingPage() {
   const auth = useAuth()
   const isVip = auth?.user?.isvip === 1
-  const { data, isLoading, isFetching, error, refetch } = useQuery<Ranking[], Error>({
+  const { data, isLoading, error, refetch } = useQuery<Ranking[], Error>({
     queryKey: ['weekly-ranking'],
     queryFn: fetchWeeklyRanking,
     staleTime: 30_000,

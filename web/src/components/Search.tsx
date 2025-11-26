@@ -51,7 +51,7 @@ async function searchSongs({ query, page, pageSize }: SearchParams): Promise<Sea
   );
   const elapsed = performance.now() - started;
 
-  let data: SearchPayload | { error?: unknown } | undefined;
+  let data: unknown;
   try {
     data = await res.json();
   } catch {
@@ -66,7 +66,8 @@ async function searchSongs({ query, page, pageSize }: SearchParams): Promise<Sea
     throw new Error(message);
   }
 
-  const safeData: Partial<SearchPayload> = data && typeof data === "object" ? data : {};
+  const safeData: Partial<SearchPayload> =
+    data && typeof data === "object" ? (data as Partial<SearchPayload>) : {};
   const results = Array.isArray(safeData.results) ? safeData.results : [];
   return {
     results,

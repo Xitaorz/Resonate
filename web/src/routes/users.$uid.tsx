@@ -246,7 +246,7 @@ function UserProfilePage() {
                     className="text-left"
                     onClick={() => {
                       setShowPlaylists(false)
-                      navigate({ to: '/playlist/$plstid', params: { plstid: String(pl.plstid) } })
+                      navigate({ to: '/playlists/$plstid', params: { plstid: String(pl.plstid) } })
                     }}
                   >
                     <Card className="hover:border-primary/50 transition-colors">

@@ -80,27 +80,27 @@ function AlbumPage() {
       <div className="w-full max-w-4xl space-y-6 relative">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-semibold tracking-tight">
-                {isVip ? (
-                  <AuroraText className="text-3xl font-bold">{albumTitle}</AuroraText>
-                ) : (
-                  albumTitle
-                )}
-              </h1>
-              {isVip && (
-                <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 px-2.5 py-1 text-xs font-bold text-amber-900 shadow-md shadow-amber-500/50">
-                  <Crown className="size-3 fill-amber-900" />
-                  VIP
-                </span>
-              )}
-            </div>
-            <p className="text-muted-foreground">Album ID: {albumId}</p>
-          </div>
-          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
-            Refresh
-          </Button>
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-semibold tracking-tight">
+            {isVip ? (
+              <AuroraText className="text-3xl font-bold">{albumTitle}</AuroraText>
+            ) : (
+              albumTitle
+            )}
+          </h1>
+          {isVip && (
+            <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 px-2.5 py-1 text-xs font-bold text-amber-900 shadow-md shadow-amber-500/50">
+              <Crown className="size-3 fill-amber-900" />
+              VIP
+            </span>
+          )}
         </div>
+        <p className="text-muted-foreground">Album: {albumTitle}</p>
+      </div>
+      <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+        Refresh
+      </Button>
+    </div>
 
         <Card className={isVip ? "border-2 border-amber-400/30 shadow-lg shadow-amber-500/20 relative overflow-hidden" : ""}>
           {isVip && (
