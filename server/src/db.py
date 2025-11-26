@@ -309,6 +309,16 @@ class DB:
             rows = cur.fetchall()
         return list(rows)
 
+    def playlist_name_exists(self, uid: int, name: str) -> bool:
+        """Check if a playlist with the same name already exists for the user."""
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT 1 FROM playlists WHERE uid = %s AND name = %s LIMIT 1",
+                (uid, name),
+            )
+            return cur.fetchone() is not None
+
     def get_playlist(self, plstid: int) -> Optional[Dict[str, Any]]:
         sql = self._sql("get_playlist.sql")
         conn = self._ensure_conn()

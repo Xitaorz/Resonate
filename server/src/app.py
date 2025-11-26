@@ -422,6 +422,10 @@ def create_app() -> Flask:
             return jsonify({"error": "visibility must be one of public, private"}), 400
 
         try:
+            # Check if a playlist with the same name already exists for this user
+            if db.playlist_name_exists(int(uid), str(name)):
+                return jsonify({"error": "You already have a playlist with this name. Please choose a different name."}), 400
+            
             plstid = db.create_playlist(int(uid), str(name), description, visibility)
             return jsonify({"playlist_id": plstid}), 201
         except Exception as e:
