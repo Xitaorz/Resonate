@@ -2,6 +2,8 @@ export type UserProfile = {
   uid: number;
   username: string;
   email: string;
+  num_playlists: number;
+  num_favorites: number;
   gender: string | null;
   age: number | null;
   street: string | null;
