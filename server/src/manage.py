@@ -29,6 +29,8 @@ def init_db() -> None:
     weekly_event = load_sql("src/sql/weekly-ranking-event.sql")
     tags_sql = load_sql("src/sql/tags.sql")
     virtual_tags_sql = load_sql("src/sql/virtual_tags.sql")
+    create_trigger = load_sql("src/sql/create_trigger.sql")
+
     sample_favorites = load_sql("src/sql/sample_favorites")
     
     init_queries = {
@@ -39,6 +41,7 @@ def init_db() -> None:
         "large_sample": large_sample,
         "weekly_view": weekly_view,
         "weekly_refresh": weekly_refresh,
+        "create_trigger": create_trigger,
         #"sample_favorites": sample_favorites
     }
 
@@ -162,6 +165,7 @@ def list_users() -> int:
     except Exception as e:
         print("Error:", e)
         return 1
+
 
 def main(argv: List[str]) -> int:
     cmd = argv[1].lower()
