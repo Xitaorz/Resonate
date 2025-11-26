@@ -29,6 +29,7 @@ def init_db() -> None:
     weekly_event = load_sql("src/sql/weekly-ranking-event.sql")
     tags_sql = load_sql("src/sql/tags.sql")
     virtual_tags_sql = load_sql("src/sql/virtual_tags.sql")
+    sample_favorites = load_sql("src/sql/sample_favorites")
     
     init_queries = {
         "schema": schema_sql,
@@ -38,6 +39,7 @@ def init_db() -> None:
         "large_sample": large_sample,
         "weekly_view": weekly_view,
         "weekly_refresh": weekly_refresh,
+        #"sample_favorites": sample_favorites
     }
 
     for query in init_queries:
@@ -64,6 +66,7 @@ def import_data() -> None:
     df = df[df["name"].notnull()]
     df = df[df["album"].notnull()]
     print(df["release_date"].head())
+    
 
     df['release_date'] = pd.to_datetime(df['release_date'], format='%Y-%m-%d', errors="coerce")
     numeric_feature_cols = [
@@ -113,6 +116,10 @@ def import_data() -> None:
     db.import_df(album_owned_by_artist_df, "album_owned_by_artist")
 
     print("Data imported to DB.")
+
+    sample_favorites = load_sql("src/sql/sample_favorites")
+    db.execute_script(sample_favorites)
+    print("Load sample favorites")
 
 
 
