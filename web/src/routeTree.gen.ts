@@ -16,7 +16,8 @@ import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UsersUidRouteImport } from './routes/users.$uid'
 import { Route as SongsSidRouteImport } from './routes/songs.$sid'
-import { Route as PlaylistPlstidRouteImport } from './routes/playlist.$plstid'
+import { Route as PlaylistsFollowedRouteImport } from './routes/playlists.followed'
+import { Route as PlaylistsPlstidRouteImport } from './routes/playlists.$plstid'
 import { Route as ArtistArtistIdRouteImport } from './routes/artist.$artistId'
 import { Route as AlbumsAlbumIdRouteImport } from './routes/albums.$albumId'
 
@@ -55,10 +56,15 @@ const SongsSidRoute = SongsSidRouteImport.update({
   path: '/songs/$sid',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PlaylistPlstidRoute = PlaylistPlstidRouteImport.update({
-  id: '/playlist/$plstid',
-  path: '/playlist/$plstid',
-  getParentRoute: () => rootRouteImport,
+const PlaylistsFollowedRoute = PlaylistsFollowedRouteImport.update({
+  id: '/followed',
+  path: '/followed',
+  getParentRoute: () => PlaylistsRoute,
+} as any)
+const PlaylistsPlstidRoute = PlaylistsPlstidRouteImport.update({
+  id: '/$plstid',
+  path: '/$plstid',
+  getParentRoute: () => PlaylistsRoute,
 } as any)
 const ArtistArtistIdRoute = ArtistArtistIdRouteImport.update({
   id: '/artist/$artistId',
@@ -74,24 +80,26 @@ const AlbumsAlbumIdRoute = AlbumsAlbumIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/favorites': typeof FavoritesRoute
-  '/playlists': typeof PlaylistsRoute
+  '/playlists': typeof PlaylistsRouteWithChildren
   '/recommendations': typeof RecommendationsRoute
   '/weekly-ranking': typeof WeeklyRankingRoute
   '/albums/$albumId': typeof AlbumsAlbumIdRoute
   '/artist/$artistId': typeof ArtistArtistIdRoute
-  '/playlist/$plstid': typeof PlaylistPlstidRoute
+  '/playlists/$plstid': typeof PlaylistsPlstidRoute
+  '/playlists/followed': typeof PlaylistsFollowedRoute
   '/songs/$sid': typeof SongsSidRoute
   '/users/$uid': typeof UsersUidRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/favorites': typeof FavoritesRoute
-  '/playlists': typeof PlaylistsRoute
+  '/playlists': typeof PlaylistsRouteWithChildren
   '/recommendations': typeof RecommendationsRoute
   '/weekly-ranking': typeof WeeklyRankingRoute
   '/albums/$albumId': typeof AlbumsAlbumIdRoute
   '/artist/$artistId': typeof ArtistArtistIdRoute
-  '/playlist/$plstid': typeof PlaylistPlstidRoute
+  '/playlists/$plstid': typeof PlaylistsPlstidRoute
+  '/playlists/followed': typeof PlaylistsFollowedRoute
   '/songs/$sid': typeof SongsSidRoute
   '/users/$uid': typeof UsersUidRoute
 }
@@ -99,12 +107,13 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/favorites': typeof FavoritesRoute
-  '/playlists': typeof PlaylistsRoute
+  '/playlists': typeof PlaylistsRouteWithChildren
   '/recommendations': typeof RecommendationsRoute
   '/weekly-ranking': typeof WeeklyRankingRoute
   '/albums/$albumId': typeof AlbumsAlbumIdRoute
   '/artist/$artistId': typeof ArtistArtistIdRoute
-  '/playlist/$plstid': typeof PlaylistPlstidRoute
+  '/playlists/$plstid': typeof PlaylistsPlstidRoute
+  '/playlists/followed': typeof PlaylistsFollowedRoute
   '/songs/$sid': typeof SongsSidRoute
   '/users/$uid': typeof UsersUidRoute
 }
@@ -118,7 +127,8 @@ export interface FileRouteTypes {
     | '/weekly-ranking'
     | '/albums/$albumId'
     | '/artist/$artistId'
-    | '/playlist/$plstid'
+    | '/playlists/$plstid'
+    | '/playlists/followed'
     | '/songs/$sid'
     | '/users/$uid'
   fileRoutesByTo: FileRoutesByTo
@@ -130,7 +140,8 @@ export interface FileRouteTypes {
     | '/weekly-ranking'
     | '/albums/$albumId'
     | '/artist/$artistId'
-    | '/playlist/$plstid'
+    | '/playlists/$plstid'
+    | '/playlists/followed'
     | '/songs/$sid'
     | '/users/$uid'
   id:
@@ -142,7 +153,8 @@ export interface FileRouteTypes {
     | '/weekly-ranking'
     | '/albums/$albumId'
     | '/artist/$artistId'
-    | '/playlist/$plstid'
+    | '/playlists/$plstid'
+    | '/playlists/followed'
     | '/songs/$sid'
     | '/users/$uid'
   fileRoutesById: FileRoutesById
@@ -150,12 +162,11 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   FavoritesRoute: typeof FavoritesRoute
-  PlaylistsRoute: typeof PlaylistsRoute
+  PlaylistsRoute: typeof PlaylistsRouteWithChildren
   RecommendationsRoute: typeof RecommendationsRoute
   WeeklyRankingRoute: typeof WeeklyRankingRoute
   AlbumsAlbumIdRoute: typeof AlbumsAlbumIdRoute
   ArtistArtistIdRoute: typeof ArtistArtistIdRoute
-  PlaylistPlstidRoute: typeof PlaylistPlstidRoute
   SongsSidRoute: typeof SongsSidRoute
   UsersUidRoute: typeof UsersUidRoute
 }
@@ -211,12 +222,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SongsSidRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/playlist/$plstid': {
-      id: '/playlist/$plstid'
-      path: '/playlist/$plstid'
-      fullPath: '/playlist/$plstid'
-      preLoaderRoute: typeof PlaylistPlstidRouteImport
-      parentRoute: typeof rootRouteImport
+    '/playlists/followed': {
+      id: '/playlists/followed'
+      path: '/followed'
+      fullPath: '/playlists/followed'
+      preLoaderRoute: typeof PlaylistsFollowedRouteImport
+      parentRoute: typeof PlaylistsRoute
+    }
+    '/playlists/$plstid': {
+      id: '/playlists/$plstid'
+      path: '/$plstid'
+      fullPath: '/playlists/$plstid'
+      preLoaderRoute: typeof PlaylistsPlstidRouteImport
+      parentRoute: typeof PlaylistsRoute
     }
     '/artist/$artistId': {
       id: '/artist/$artistId'
@@ -235,15 +253,28 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface PlaylistsRouteChildren {
+  PlaylistsPlstidRoute: typeof PlaylistsPlstidRoute
+  PlaylistsFollowedRoute: typeof PlaylistsFollowedRoute
+}
+
+const PlaylistsRouteChildren: PlaylistsRouteChildren = {
+  PlaylistsPlstidRoute: PlaylistsPlstidRoute,
+  PlaylistsFollowedRoute: PlaylistsFollowedRoute,
+}
+
+const PlaylistsRouteWithChildren = PlaylistsRoute._addFileChildren(
+  PlaylistsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FavoritesRoute: FavoritesRoute,
-  PlaylistsRoute: PlaylistsRoute,
+  PlaylistsRoute: PlaylistsRouteWithChildren,
   RecommendationsRoute: RecommendationsRoute,
   WeeklyRankingRoute: WeeklyRankingRoute,
   AlbumsAlbumIdRoute: AlbumsAlbumIdRoute,
   ArtistArtistIdRoute: ArtistArtistIdRoute,
-  PlaylistPlstidRoute: PlaylistPlstidRoute,
   SongsSidRoute: SongsSidRoute,
   UsersUidRoute: UsersUidRoute,
 }

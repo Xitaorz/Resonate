@@ -1,5 +1,6 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
+import type { KeyboardEvent } from 'react'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -21,12 +22,13 @@ type PlaylistDetail = {
   }>
 }
 
-export const Route = createFileRoute('/playlist/$plstid')({
+export const Route = createFileRoute('/playlists/$plstid')({
   component: PlaylistDetailPage,
 })
 
 function PlaylistDetailPage() {
   const { plstid } = Route.useParams()
+  const navigate = useNavigate()
 
   const { data, isLoading, error, refetch, isFetching } = useQuery<PlaylistDetail, Error>({
     queryKey: ['playlist-detail', plstid],
@@ -37,6 +39,17 @@ function PlaylistDetailPage() {
     },
     staleTime: 30_000,
   })
+
+  const openSong = (sid: string) => {
+    navigate({ to: '/songs/$sid', params: { sid } })
+  }
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>, sid: string) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      openSong(sid)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -101,19 +114,26 @@ function PlaylistDetailPage() {
               <p className="text-sm text-muted-foreground">No songs added yet.</p>
             ) : (
               songs.map((song) => (
-                <div key={song.sid} className="flex items-center justify-between py-3 gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold">
+                <div
+                  key={song.sid}
+                  className="flex items-center justify-between py-3 gap-4 cursor-pointer transition hover:bg-muted/50 rounded-lg px-2 -mx-2"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => openSong(song.sid)}
+                  onKeyDown={(event) => handleKeyDown(event, song.sid)}
+                  aria-label={`Open details for ${song.song_title}`}
+                >
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold shrink-0">
                       {song.position}
                     </div>
-                    <div>
-                      <p className="font-medium">{song.song_title}</p>
+                    <div className="flex-1">
+                      <p className="font-medium hover:text-primary transition-colors">{song.song_title}</p>
                       <p className="text-sm text-muted-foreground">
                         {song.artist_names || 'Unknown artist'} • {song.album_title || 'Unknown album'}
                       </p>
                     </div>
                   </div>
-                  <div className="text-xs text-muted-foreground">SID: {song.sid}</div>
                 </div>
               ))
             )}

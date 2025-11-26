@@ -2,7 +2,7 @@ import { Outlet, createRootRoute, useRouterState, Link } from '@tanstack/react-r
 import { Suspense, lazy, useEffect, useState } from 'react'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
-import { Heart, Home, Sparkles, TrendingUp, User } from 'lucide-react'
+import { Heart, Home, Sparkles, TrendingUp, User, Bookmark } from 'lucide-react'
 
 import {
   Sidebar,
@@ -49,7 +49,8 @@ export const Route = createRootRoute({
       { to: '/recommendations', label: 'Recommendations', icon: Sparkles },
       { to: '/weekly-ranking', label: 'Weekly Ranking', icon: TrendingUp },
       { to: '/users/$uid', label: 'User Profile', icon: User, params: { uid: currentUserId }, matchPrefix: '/users' },
-      { to: '/playlists', label: 'Playlists', icon: User, matchPrefix: '/playlists' },
+      { to: '/playlists', label: 'My Playlists', icon: User },
+      { to: '/playlists/followed', label: 'Followed Playlists', icon: Bookmark, matchPrefix: '/playlists/followed' },
       { to: '/favorites', label: 'Favorites', icon: Heart, matchPrefix: '/favorites' },
     ]
 

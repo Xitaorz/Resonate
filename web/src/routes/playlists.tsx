@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
-import { Outlet, createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { Outlet, createFileRoute, useRouterState } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Trash2 } from 'lucide-react'
 
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -32,12 +33,23 @@ function PlaylistsPage() {
   const isAuthed = Boolean(uid)
   const [form, setForm] = useState({ name: '', description: '', visibility: 'public' })
   const queryClient = useQueryClient()
-  const navigate = useNavigate()
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  })
+  
+  // Only show the main content on the exact /playlists route, not on child routes
+  const isExactPlaylistsRoute = pathname === '/playlists'
 
-  const { data, isLoading, error, refetch, isFetching } = useQuery<Playlist[], Error>({
+  const {
+    data: mine,
+    isLoading,
+    error,
+    refetch,
+    isFetching,
+  } = useQuery<Playlist[], Error>({
     queryKey: ['playlists-page', uid],
     queryFn: async () => {
-      const res = await fetch(`/api/users/${uid}/playlists`, { headers: { 'X-User-Id': uid! } })
+      const res = await fetch(`/api/users/${uid}/playlists`, { headers: { 'X-User-Id': uid } })
       if (!res.ok) throw new Error('Failed to load playlists')
       const payload = await res.json()
       return payload.playlists ?? []
@@ -51,7 +63,7 @@ function PlaylistsPage() {
       if (!isAuthed) throw new Error('Log in required')
       const res = await fetch('/api/playlists', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-User-Id': uid! },
+        headers: { 'Content-Type': 'application/json', 'X-User-Id': uid },
         body: JSON.stringify({
           name: form.name,
           description: form.description || null,
@@ -64,7 +76,23 @@ function PlaylistsPage() {
     onSuccess: async () => {
       setForm({ name: '', description: '', visibility: 'public' })
       await queryClient.invalidateQueries({ queryKey: ['playlists-page', uid] })
-      await queryClient.invalidateQueries({ queryKey: ['user-playlists', uid] })
+      refetch()
+    },
+  })
+
+  const deletePlaylist = useMutation({
+    mutationFn: async (plstid: number) => {
+      if (!isAuthed) throw new Error('Log in required')
+      const res = await fetch(`/api/playlists/${plstid}`, {
+        method: 'DELETE',
+        headers: { 'X-User-Id': uid },
+      })
+      const payload = await res.json()
+      if (!res.ok) throw new Error(payload?.error || 'Failed to delete playlist')
+      return payload
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['playlists-page', uid] })
       refetch()
     },
   })
@@ -77,7 +105,7 @@ function PlaylistsPage() {
     []
   )
 
-  const content = (() => {
+  const myPlaylists = (() => {
     if (!isAuthed) {
       return (
         <Card>
@@ -114,42 +142,65 @@ function PlaylistsPage() {
         </Card>
       )
     }
-    if (!data || data.length === 0) {
+    if (!mine || mine.length === 0) {
       return (
         <Card>
           <CardHeader>
             <CardTitle>No playlists found</CardTitle>
-            <CardDescription>Create a playlist from the search page to see it here.</CardDescription>
+            <CardDescription>Create a playlist to see it here.</CardDescription>
           </CardHeader>
         </Card>
       )
     }
     return (
-        <div className="grid gap-3">
-          {data.map((pl) => (
-            <button
-              key={pl.plstid}
-              className="text-left"
-              onClick={() => navigate({ to: '/playlist/$plstid', params: { plstid: String(pl.plstid) } })}
-            >
-              <Card className="hover:border-primary/50 transition-colors">
-              <CardHeader>
-                <CardTitle className="text-lg">{pl.name}</CardTitle>
-                <CardDescription className="line-clamp-2">
-                  {pl.description || 'No description'}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">
-                  {pl.visibility} • {new Date(pl.created_at).toLocaleString()}
-                </div>
-              </CardContent>
-            </Card>
-            </button>
-          ))}
-        </div>
+      <div className="grid gap-3">
+        {mine.map((pl) => (
+          <Card key={pl.plstid} className="hover:border-primary/50 transition-colors">
+            <CardHeader>
+              <CardTitle className="text-lg">{pl.name}</CardTitle>
+              <CardDescription className="line-clamp-2">
+                {pl.description || 'No description'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                {pl.visibility} • {new Date(pl.created_at).toLocaleString()}
+              </div>
+              <div className="flex items-center gap-2">
+                <a
+                  href={`/playlists/${pl.plstid}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  View
+                </a>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  disabled={deletePlaylist.isPending}
+                  onClick={() => {
+                    if (confirm(`Are you sure you want to delete "${pl.name}"? This action cannot be undone.`)) {
+                      deletePlaylist.mutate(pl.plstid)
+                    }
+                  }}
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  {deletePlaylist.isPending ? 'Deleting...' : 'Delete'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     )
   })()
+
+  // If we're on a child route (like /playlists/followed), 
+  // only render the Outlet (child component), not the parent content
+  if (!isExactPlaylistsRoute) {
+    return <Outlet />
+  }
 
   return (
     <>
@@ -157,13 +208,13 @@ function PlaylistsPage() {
         <div className="w-full max-w-4xl space-y-6">
           <div className="flex flex-wrap items-center gap-3 justify-between">
             <div>
-              <h1 className="text-3xl font-semibold tracking-tight">Your Playlists</h1>
+              <h1 className="text-3xl font-semibold tracking-tight">My Playlists</h1>
               <p className="text-muted-foreground">
-                {isAuthed ? 'Playlists for your account.' : authRequiredCopy.description}
+                {isAuthed ? 'Manage your playlists.' : authRequiredCopy.description}
               </p>
             </div>
           </div>
-          {content}
+
           {isAuthed ? (
             <div className="grid gap-2 p-4 border rounded-xl border-border/60 bg-muted/30">
               <h3 className="font-semibold">Create playlist</h3>
@@ -200,8 +251,15 @@ function PlaylistsPage() {
               ) : null}
             </div>
           ) : null}
+
+          <div className="space-y-3">
+            <h3 className="text-xl font-semibold tracking-tight">Your playlists</h3>
+            {myPlaylists}
+          </div>
         </div>
       </div>
+      <Outlet />
     </>
   )
 }
+

@@ -358,6 +358,67 @@ class DB:
             cur.execute(sql, (uid,))
             rows = cur.fetchall()
         return list(rows)
+
+    def search_playlists(self, query: str, uid: Optional[int] = None) -> List[Dict[str, Any]]:
+        """
+        Search playlists by name. Includes public/unlisted lists and the caller's own private lists.
+        """
+        pattern = f"%{query}%"
+        sql = self._sql("search_playlists.sql")
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            cur.execute(sql, (pattern, uid if uid is not None else -1))
+            rows = cur.fetchall()
+        return list(rows)
+
+    def follow_playlist(self, uid: int, plstid: int) -> None:
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT IGNORE INTO user_follow_playlist (uid, plstid) VALUES (%s, %s)",
+                (uid, plstid),
+            )
+
+    def unfollow_playlist(self, uid: int, plstid: int) -> bool:
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            cur.execute(
+                "DELETE FROM user_follow_playlist WHERE uid = %s AND plstid = %s",
+                (uid, plstid),
+            )
+            return cur.rowcount > 0
+
+    def list_followed_playlists(self, uid: int) -> List[Dict[str, Any]]:
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT p.plstid,
+                       p.uid,
+                       p.name,
+                       p.description,
+                       p.visibility,
+                       p.created_at,
+                       ufp.followed_at
+                FROM user_follow_playlist ufp
+                JOIN playlists p ON p.plstid = ufp.plstid
+                WHERE ufp.uid = %s
+                  AND (p.visibility != 'private' OR p.uid = %s)
+                ORDER BY ufp.followed_at DESC
+                """,
+                (uid, uid),
+            )
+            rows = cur.fetchall()
+        return list(rows)
+
+    def is_playlist_followed(self, uid: int, plstid: int) -> bool:
+        conn = self._ensure_conn()
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT 1 FROM user_follow_playlist WHERE uid = %s AND plstid = %s LIMIT 1",
+                (uid, plstid),
+            )
+            return cur.fetchone() is not None
     
     def get_user_profile(self, uid: int) -> Optional[Dict[str, Any]]:
         conn = self._ensure_conn()

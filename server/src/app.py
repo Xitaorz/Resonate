@@ -500,6 +500,52 @@ def create_app() -> Flask:
             print(f"Delete playlist error: {e}")
             return jsonify({"error": "Failed to delete playlist"}), 500
 
+    @app.post("/playlists/<int:plstid>/follow")
+    def follow_playlist(plstid: int):
+        uid = _get_uid_from_request()
+        if uid is None:
+            return jsonify({"error": "uid required"}), 401
+        playlist = db.get_playlist(plstid)
+        if not playlist:
+            return jsonify({"error": "playlist not found"}), 404
+        if playlist.get("visibility") == "private" and int(playlist.get("uid", -1)) != uid:
+            return jsonify({"error": "cannot follow a private playlist"}), 403
+        try:
+            db.follow_playlist(uid, plstid)
+            return jsonify({"uid": uid, "plstid": plstid, "following": True}), 201
+        except Exception as e:
+            print(f"Follow playlist error: {e}")
+            return jsonify({"error": "Failed to follow playlist"}), 500
+
+    @app.delete("/playlists/<int:plstid>/follow")
+    def unfollow_playlist(plstid: int):
+        uid = _get_uid_from_request()
+        if uid is None:
+            return jsonify({"error": "uid required"}), 401
+        playlist = db.get_playlist(plstid)
+        if not playlist:
+            return jsonify({"error": "playlist not found"}), 404
+        try:
+            removed = db.unfollow_playlist(uid, plstid)
+            if not removed:
+                return jsonify({"error": "follow not found"}), 404
+            return jsonify({"uid": uid, "plstid": plstid, "following": False}), 200
+        except Exception as e:
+            print(f"Unfollow playlist error: {e}")
+            return jsonify({"error": "Failed to unfollow playlist"}), 500
+
+    @app.get("/users/<int:uid>/followed-playlists")
+    def list_followed_playlists(uid: int):
+        auth_uid = _get_uid_from_request()
+        if auth_uid is not None and auth_uid != uid:
+            return jsonify({"error": "forbidden"}), 403
+        try:
+            playlists = db.list_followed_playlists(uid)
+            return jsonify({"count": len(playlists), "playlists": playlists})
+        except Exception as e:
+            print(f"List followed playlists error: {e}")
+            return jsonify({"error": "Failed to load followed playlists"}), 500
+
     @app.post("/favorites")
     def favorite_song():
         payload = request.get_json(silent=True) or {}
@@ -545,6 +591,19 @@ def create_app() -> Flask:
         except Exception as e:
             print(f"List favorites error: {e}")
             return jsonify({"error": str(e)}), 500
+
+    @app.get("/playlists/search")
+    def search_playlists():
+        q = request.args.get("q", "").strip()
+        if not q:
+            return jsonify({"count": 0, "playlists": []})
+        uid = _get_uid_from_request()
+        try:
+            playlists = db.search_playlists(q, uid)
+            return jsonify({"count": len(playlists), "playlists": playlists})
+        except Exception as e:
+            print(f"Search playlists error: {e}")
+            return jsonify({"error": "Failed to search playlists"}), 500
 
     return app
 
