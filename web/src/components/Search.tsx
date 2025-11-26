@@ -5,7 +5,15 @@ import { Crown } from "lucide-react";
 import { Input } from "./ui/input";
 import { SongList } from "./SongList";
 import { Spinner } from "./ui/spinner";
-import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "./ui/pagination";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "./ui/pagination";
 import { useAuth } from "@/hooks/use-auth";
 import { AuroraText } from "./ui/aurora-text";
 
@@ -42,27 +50,31 @@ async function searchSongs({ query, page, pageSize }: SearchParams): Promise<Sea
   );
   const elapsed = performance.now() - started;
 
-  let data: any = {};
+  let data: SearchPayload | { error?: unknown } | undefined;
   try {
     data = await res.json();
   } catch {
-    data = {};
+    data = undefined;
   }
 
   if (!res.ok) {
-    const message = typeof data?.error === "string" ? data.error : "Failed to load results";
+    const message =
+      data && typeof data === "object" && "error" in data && typeof data.error === "string"
+        ? data.error
+        : "Failed to load results";
     throw new Error(message);
   }
 
-  const results = Array.isArray(data?.results) ? data.results : [];
+  const safeData: Partial<SearchPayload> = data && typeof data === "object" ? data : {};
+  const results = Array.isArray(safeData.results) ? safeData.results : [];
   return {
     results,
     durationMs: elapsed,
     query,
-    total: Number.isFinite(data?.total) ? Number(data.total) : results.length,
-    page: Number.isFinite(data?.page) ? Number(data.page) : 1,
-    page_size: Number.isFinite(data?.page_size) ? Number(data.page_size) : results.length,
-    has_next: Boolean(data?.has_next),
+    total: Number.isFinite(safeData.total) ? Number(safeData.total) : results.length,
+    page: Number.isFinite(safeData.page) ? Number(safeData.page) : 1,
+    page_size: Number.isFinite(safeData.page_size) ? Number(safeData.page_size) : results.length,
+    has_next: Boolean(safeData.has_next),
   };
 }
 
@@ -90,6 +102,11 @@ export function Search() {
     if (!data) return null;
     return `${data.durationMs.toFixed(1)} ms`;
   }, [data]);
+
+  const lastPage = useMemo(() => {
+    if (!data) return 1;
+    return Math.max(1, Math.ceil(data.total / pageSize));
+  }, [data, pageSize]);
 
   const isSearching = isLoading || isFetching;
 
@@ -193,31 +210,61 @@ export function Search() {
                           }}
                         />
                       </PaginationItem>
-                      <PaginationItem>
-                        <PaginationLink href="#" isActive>
-                          {page}
-                        </PaginationLink>
-                      </PaginationItem>
-                      {data.has_next ? (
-                        <>
-                          <PaginationItem>
-                            <PaginationEllipsis />
-                          </PaginationItem>
-                          <PaginationItem>
-                            <PaginationNext
-                              href="#"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setPage(page + 1);
-                              }}
-                            />
-                          </PaginationItem>
-                        </>
-                      ) : (
+                      {lastPage > 1 ? (
                         <PaginationItem>
-                          <PaginationNext href="#" aria-disabled />
+                          <PaginationLink
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (page !== 1) setPage(1);
+                            }}
+                            isActive={page === 1}
+                          >
+                            1
+                          </PaginationLink>
                         </PaginationItem>
-                      )}
+                      ) : null}
+                      {page > 2 ? (
+                        <PaginationItem>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      ) : null}
+                      {page > 1 && page < lastPage ? (
+                        <PaginationItem>
+                          <PaginationLink href="#" isActive>
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      ) : null}
+                      {page < lastPage - 1 ? (
+                        <PaginationItem>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      ) : null}
+                      {lastPage > 1 ? (
+                        <PaginationItem>
+                          <PaginationLink
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (page !== lastPage) setPage(lastPage);
+                            }}
+                            isActive={page === lastPage}
+                          >
+                            {lastPage}
+                          </PaginationLink>
+                        </PaginationItem>
+                      ) : null}
+                      <PaginationItem>
+                        <PaginationNext
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (page < lastPage) setPage(page + 1);
+                          }}
+                          aria-disabled={page >= lastPage}
+                        />
+                      </PaginationItem>
                     </PaginationContent>
                   </Pagination>
                 </div>
