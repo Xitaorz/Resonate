@@ -1,9 +1,6 @@
-import { useEffect, useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Heart, Crown } from 'lucide-react'
-
-import { Input } from '@/components/ui/input'
 import {
   Card,
   CardContent,
@@ -27,28 +24,14 @@ export const Route = createFileRoute('/favorites')({
 })
 
 function FavoritesPage() {
-  const [uid, setUid] = useState('1')
   const queryClient = useQueryClient()
   const auth = useAuth()
   const isVip = auth?.user?.isvip === 1
-
-  useEffect(() => {
-    const stored = localStorage.getItem('resonate_auth')
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored)
-        if (parsed?.user?.uid) {
-          setUid(String(parsed.user.uid))
-        }
-      } catch {
-        // ignore parse errors
-      }
-    }
-  }, [])
+  const uid = auth?.user?.uid ? String(auth.user.uid) : ''
 
   const { data, error, isLoading, isFetching, refetch } = useQuery<Favorite[], Error>({
     queryKey: ['favorites', uid],
-    enabled: !!uid,
+    enabled: Boolean(uid),
     queryFn: async () => {
       const res = await fetch(`/api/users/${uid}/favorites`, {
         headers: { 'X-User-Id': uid },
@@ -83,6 +66,16 @@ function FavoritesPage() {
   })
 
   const content = (() => {
+    if (!uid) {
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle>Log in required</CardTitle>
+            <CardDescription>Please log in to view your favorites.</CardDescription>
+          </CardHeader>
+        </Card>
+      )
+    }
     if (isLoading) {
       return (
         <div className="grid gap-3">
@@ -188,16 +181,6 @@ function FavoritesPage() {
               )}
             </div>
             <p className="text-muted-foreground">Songs you have favorited.</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">User ID</span>
-            <Input
-              className="w-28"
-              value={uid}
-              onChange={(e) => setUid(e.target.value)}
-              type="number"
-              min={1}
-            />
           </div>
         </div>
         {content}
