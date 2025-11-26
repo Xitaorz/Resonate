@@ -44,11 +44,11 @@ export function SongList({ songs, action }: SongListProps) {
           aria-label={`Open details for ${song.title}`}
         >
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <CardTitle className="hover:text-primary">
-                <span className="inline-flex items-center gap-2">
-                  <span>{song.title}</span>
-                  <span className="text-xs font-medium text-muted-foreground">View details</span>
+            <div className="w-full"> 
+              <CardTitle className="flex w-full items-start gap-3 hover:text-primary">
+                <span className="flex-1 min-w-0 leading-tight">{song.title}</span>
+                <span className="shrink-0 text-xs font-medium text-muted-foreground">
+                  View details
                 </span>
               </CardTitle>
               <CardContent className="p-0 pt-2 space-y-1">
