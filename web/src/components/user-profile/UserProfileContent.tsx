@@ -74,7 +74,7 @@ export default function UserProfileContent({ profile, footerSlot }: Props) {
             />
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            <InfoRow label="User ID" value={profile.uid.toString()} />
+            <InfoRow label="User ID" value={profile.uid !== undefined && profile.uid !== null ? String(profile.uid) : '—'} />
             <InfoRow label="Gender" value={profile.gender || '—'} />
             <InfoRow
               label="Age"
