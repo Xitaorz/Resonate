@@ -70,8 +70,12 @@ function PlaylistsPage() {
           visibility: form.visibility,
         }),
       })
-      if (!res.ok) throw new Error('Failed to create playlist')
-      return res.json()
+      const payload = await res.json()
+      if (!res.ok) {
+        const errorMessage = payload?.error || 'Failed to create playlist'
+        throw new Error(errorMessage)
+      }
+      return payload
     },
     onSuccess: async () => {
       setForm({ name: '', description: '', visibility: 'public' })
