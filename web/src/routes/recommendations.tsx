@@ -138,7 +138,6 @@ function RecommendationsPage() {
                 </div>
                 <div>
                   <CardTitle className="text-lg">{rec.name}</CardTitle>
-                  <CardDescription>SID: {rec.sid}</CardDescription>
                 </div>
               </div>
             </CardHeader>
