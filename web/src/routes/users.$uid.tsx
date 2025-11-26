@@ -1,7 +1,7 @@
 import { Suspense, lazy, useEffect, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Pencil } from 'lucide-react'
+import { Pencil, Crown } from 'lucide-react'
 
 import {
   fetchUserProfile,
@@ -97,16 +97,32 @@ function UserProfilePage() {
   })
 
   return (
-    <div className="flex justify-center px-4 py-10">
-      <div className="w-full max-w-5xl space-y-6">
-        <Card>
-          <CardHeader className="gap-3">
-            <CardTitle>User Profile</CardTitle>
+    <div className={`flex justify-center px-4 py-10 min-h-screen ${
+      data?.isvip === 1 ? "bg-gradient-to-br from-amber-50/50 via-yellow-50/30 to-amber-50/50 dark:from-amber-950/20 dark:via-yellow-950/10 dark:to-amber-950/20" : ""
+    }`}>
+      {data?.isvip === 1 && (
+        <div className="fixed inset-0 bg-gradient-to-br from-amber-500/5 via-yellow-500/5 to-amber-500/5 pointer-events-none -z-10" />
+      )}
+      <div className="w-full max-w-5xl space-y-6 relative">
+        <Card className={data?.isvip === 1 ? "relative overflow-hidden border-2 border-amber-400/30 shadow-lg shadow-amber-500/20" : ""}>
+          {data?.isvip === 1 && (
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-yellow-500/5 to-amber-500/5 pointer-events-none" />
+          )}
+          <CardHeader className="gap-3 relative">
+            <div className="flex items-center gap-2">
+              <CardTitle>User Profile</CardTitle>
+              {data?.isvip === 1 && (
+                <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 px-2 py-0.5 text-[10px] font-bold text-amber-900 shadow-md">
+                  <Crown className="size-2.5 fill-amber-900" />
+                  VIP
+                </span>
+              )}
+            </div>
             <CardDescription>
               Look up a user by id and view their profile details and hobbies.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="relative">
             <UserLookupForm
               value={userIdInput}
               onChange={setUserIdInput}
@@ -181,9 +197,22 @@ function UserProfilePage() {
         ) : null}
 
         <Dialog open={showPlaylists} onOpenChange={setShowPlaylists}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-auto pt-4">
-            <DialogHeader className="pl-2">
-              <DialogTitle>User playlists</DialogTitle>
+          <DialogContent className={`max-w-4xl max-h-[80vh] overflow-auto pt-4 ${
+            data?.isvip === 1 ? "border-2 border-amber-400/30 shadow-xl shadow-amber-500/20" : ""
+          }`}>
+            {data?.isvip === 1 && (
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-yellow-500/5 to-amber-500/5 pointer-events-none rounded-lg" />
+            )}
+            <DialogHeader className="pl-2 relative">
+              <div className="flex items-center gap-2">
+                <DialogTitle>User playlists</DialogTitle>
+                {data?.isvip === 1 && (
+                  <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 px-2 py-0.5 text-[10px] font-bold text-amber-900 shadow-md">
+                    <Crown className="size-2.5 fill-amber-900" />
+                    VIP
+                  </span>
+                )}
+              </div>
               <DialogDescription className="pl-1">Playlists for user {uid}.</DialogDescription>
             </DialogHeader>
             {playlistsLoading ? (

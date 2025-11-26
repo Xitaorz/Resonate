@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Crown } from 'lucide-react'
 
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -12,6 +13,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { useAuth } from '@/hooks/use-auth'
+import { AuroraText } from '@/components/ui/aurora-text'
 
 type Playlist = {
   plstid: number
@@ -32,6 +34,7 @@ function FollowedPlaylistsPage() {
   const auth = useAuth()
   const uid = auth?.user?.uid ? String(auth.user.uid) : ''
   const isAuthed = Boolean(uid)
+  const isVip = auth?.user?.isvip === 1
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
 
@@ -172,7 +175,9 @@ function FollowedPlaylistsPage() {
     return (
       <div className="grid gap-3">
         {followed.map((pl) => (
-          <Card key={pl.plstid} className="hover:border-primary/50 transition-colors">
+          <Card key={pl.plstid} className={`hover:border-primary/50 transition-colors ${
+            isVip ? "border-amber-400/20 shadow-md shadow-amber-500/10" : ""
+          }`}>
             <CardHeader>
               <CardTitle className="text-lg">{pl.name}</CardTitle>
               <CardDescription className="line-clamp-2">
@@ -261,7 +266,9 @@ function FollowedPlaylistsPage() {
           const mine = uid && Number(uid) === pl.uid
           const following = isFollowing.has(pl.plstid)
           return (
-            <Card key={pl.plstid} className="hover:border-primary/50 transition-colors">
+            <Card key={pl.plstid} className={`hover:border-primary/50 transition-colors ${
+              isVip ? "border-amber-400/20 shadow-md shadow-amber-500/10" : ""
+            }`}>
               <CardHeader>
                 <CardTitle className="text-lg">{pl.name}</CardTitle>
                 <CardDescription className="line-clamp-2">
@@ -313,11 +320,30 @@ function FollowedPlaylistsPage() {
   })()
 
   return (
-    <div className="flex justify-center px-4 py-10">
-      <div className="w-full max-w-4xl space-y-6">
+    <div className={`flex justify-center px-4 py-10 min-h-screen ${
+      isVip ? "bg-gradient-to-br from-amber-50/50 via-yellow-50/30 to-amber-50/50 dark:from-amber-950/20 dark:via-yellow-950/10 dark:to-amber-950/20" : ""
+    }`}>
+      {isVip && (
+        <div className="fixed inset-0 bg-gradient-to-br from-amber-500/5 via-yellow-500/5 to-amber-500/5 pointer-events-none -z-10" />
+      )}
+      <div className="w-full max-w-4xl space-y-6 relative">
         <div className="flex flex-wrap items-center gap-3 justify-between">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight">Followed Playlists</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-semibold tracking-tight">
+                {isVip ? (
+                  <AuroraText className="text-3xl font-bold">Followed Playlists</AuroraText>
+                ) : (
+                  'Followed Playlists'
+                )}
+              </h1>
+              {isVip && (
+                <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 px-2.5 py-1 text-xs font-bold text-amber-900 shadow-md shadow-amber-500/50">
+                  <Crown className="size-3 fill-amber-900" />
+                  VIP
+                </span>
+              )}
+            </div>
             <p className="text-muted-foreground">
               {isAuthed ? 'Search and follow public playlists. Followed playlists stay up to date.' : authRequiredCopy.description}
             </p>
@@ -330,7 +356,9 @@ function FollowedPlaylistsPage() {
         </div>
 
         <div className="space-y-3">
-          <h3 className="text-xl font-semibold tracking-tight">Search playlists to follow</h3>
+          <h3 className={`text-xl font-semibold tracking-tight ${isVip ? "text-amber-900 dark:text-amber-100" : ""}`}>
+            Search playlists to follow
+          </h3>
           <Input
             placeholder="Search playlists by name..."
             value={search}
@@ -340,7 +368,9 @@ function FollowedPlaylistsPage() {
         </div>
 
         <div className="space-y-3">
-          <h3 className="text-xl font-semibold tracking-tight">Your followed playlists</h3>
+          <h3 className={`text-xl font-semibold tracking-tight ${isVip ? "text-amber-900 dark:text-amber-100" : ""}`}>
+            Your followed playlists
+          </h3>
           <div className="max-h-96 overflow-y-auto pr-2">
             {followedContent}
           </div>

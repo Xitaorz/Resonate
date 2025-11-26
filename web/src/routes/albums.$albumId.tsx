@@ -1,8 +1,11 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
+import { Crown } from 'lucide-react'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { useAuth } from '@/hooks/use-auth'
+import { AuroraText } from '@/components/ui/aurora-text'
 
 type AlbumSong = {
   sid: string
@@ -24,6 +27,8 @@ export const Route = createFileRoute('/albums/$albumId')({
 
 function AlbumPage() {
   const { albumId } = Route.useParams()
+  const auth = useAuth()
+  const isVip = auth?.user?.isvip === 1
 
   const { data, error, isLoading, isFetching, refetch } = useQuery<AlbumResponse, Error>({
     queryKey: ['album-detail', albumId],
@@ -66,11 +71,30 @@ function AlbumPage() {
   const albumTitle = data.songs[0]?.album_title || 'Album'
 
   return (
-    <div className="flex justify-center px-4 py-10">
-      <div className="w-full max-w-4xl space-y-6">
+    <div className={`flex justify-center px-4 py-10 min-h-screen ${
+      isVip ? "bg-gradient-to-br from-amber-50/50 via-yellow-50/30 to-amber-50/50 dark:from-amber-950/20 dark:via-yellow-950/10 dark:to-amber-950/20" : ""
+    }`}>
+      {isVip && (
+        <div className="fixed inset-0 bg-gradient-to-br from-amber-500/5 via-yellow-500/5 to-amber-500/5 pointer-events-none -z-10" />
+      )}
+      <div className="w-full max-w-4xl space-y-6 relative">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight">{albumTitle}</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-semibold tracking-tight">
+                {isVip ? (
+                  <AuroraText className="text-3xl font-bold">{albumTitle}</AuroraText>
+                ) : (
+                  albumTitle
+                )}
+              </h1>
+              {isVip && (
+                <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 px-2.5 py-1 text-xs font-bold text-amber-900 shadow-md shadow-amber-500/50">
+                  <Crown className="size-3 fill-amber-900" />
+                  VIP
+                </span>
+              )}
+            </div>
             <p className="text-muted-foreground">Album ID: {albumId}</p>
           </div>
           <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
@@ -78,7 +102,10 @@ function AlbumPage() {
           </Button>
         </div>
 
-        <Card>
+        <Card className={isVip ? "border-2 border-amber-400/30 shadow-lg shadow-amber-500/20 relative overflow-hidden" : ""}>
+          {isVip && (
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-yellow-500/5 to-amber-500/5 pointer-events-none" />
+          )}
           <CardHeader>
             <CardTitle>Tracks</CardTitle>
             <CardDescription>

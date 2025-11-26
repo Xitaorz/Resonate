@@ -1,9 +1,12 @@
 import { useMemo, useState, type ChangeEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Crown } from "lucide-react";
 
 import { Input } from "./ui/input";
 import { SongList } from "./SongList";
 import { Spinner } from "./ui/spinner";
+import { useAuth } from "@/hooks/use-auth";
+import { AuroraText } from "./ui/aurora-text";
 
 type Result = {
   sid: string;
@@ -44,6 +47,8 @@ async function searchSongs(query: string): Promise<SearchPayload> {
 
 export function Search() {
   const [query, setQuery] = useState("");
+  const auth = useAuth();
+  const isVip = auth?.user?.isvip === 1;
 
   const {
     data,
@@ -69,7 +74,21 @@ export function Search() {
     <div className="w-full px-5 py-6">
       <div className="mx-auto flex max-w-5xl flex-col gap-4">
         <div className="space-y-1">
-          <h1 className="text-3xl font-semibold leading-tight">Search</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-semibold leading-tight">
+              {isVip ? (
+                <AuroraText className="text-3xl font-bold">Search</AuroraText>
+              ) : (
+                "Search"
+              )}
+            </h1>
+            {isVip && (
+              <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 px-2.5 py-1 text-xs font-bold text-amber-900 shadow-md shadow-amber-500/50">
+                <Crown className="size-3 fill-amber-900" />
+                VIP
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="space-y-3">

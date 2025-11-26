@@ -2,6 +2,7 @@ import { Card, CardContent, CardTitle } from "./ui/card";
 import { Link, useNavigate } from "@tanstack/react-router";
 import type { KeyboardEvent, ReactNode } from "react";
 import { TagIcon } from "./TagIcon";
+import { useAuth } from "@/hooks/use-auth";
 
 type Song = {
   sid: string;
@@ -19,6 +20,8 @@ interface SongListProps {
 
 export function SongList({ songs, action }: SongListProps) {
   const navigate = useNavigate();
+  const auth = useAuth();
+  const isVip = auth?.user?.isvip === 1;
 
   const openSong = (sid: string) => {
     navigate({ to: "/songs/$sid", params: { sid } });
@@ -36,7 +39,9 @@ export function SongList({ songs, action }: SongListProps) {
       {songs.map((song) => (
         <Card
           key={song.sid}
-          className="mb-2 p-4 w-xl cursor-pointer transition hover:-translate-y-[1px] hover:border-primary/60"
+          className={`mb-2 p-4 w-xl cursor-pointer transition hover:-translate-y-[1px] hover:border-primary/60 ${
+            isVip ? "border-amber-400/20 shadow-md shadow-amber-500/10 hover:shadow-lg hover:shadow-amber-500/20" : ""
+          }`}
           role="button"
           tabIndex={0}
           onClick={() => openSong(song.sid)}

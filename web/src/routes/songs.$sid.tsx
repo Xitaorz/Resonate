@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
+import { Crown } from 'lucide-react'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -10,6 +11,7 @@ import { TagIcon } from '@/components/TagIcon'
 import { Separator } from '@/components/ui/separator'
 import { useAuth } from '@/hooks/use-auth'
 import { Link } from '@tanstack/react-router'
+import { AuroraText } from '@/components/ui/aurora-text'
 
 type SongDetail = {
   sid: string
@@ -81,6 +83,7 @@ function SongDetailPage() {
   const { sid } = Route.useParams()
   const auth = useAuth()
   const authUid = auth?.user?.uid ?? null
+  const isVip = auth?.user?.isvip === 1
   const queryClient = useQueryClient()
   const [selectedPlaylist, setSelectedPlaylist] = useState('')
 
@@ -300,11 +303,30 @@ function SongDetailPage() {
   const avg = data.avg_rating ?? 0
 
   return (
-    <div className="flex justify-center px-4 py-10">
-      <div className="w-full max-w-4xl space-y-6">
+    <div className={`flex justify-center px-4 py-10 min-h-screen ${
+      isVip ? "bg-gradient-to-br from-amber-50/50 via-yellow-50/30 to-amber-50/50 dark:from-amber-950/20 dark:via-yellow-950/10 dark:to-amber-950/20" : ""
+    }`}>
+      {isVip && (
+        <div className="fixed inset-0 bg-gradient-to-br from-amber-500/5 via-yellow-500/5 to-amber-500/5 pointer-events-none -z-10" />
+      )}
+      <div className="w-full max-w-4xl space-y-6 relative">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-1">
-            <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-semibold tracking-tight">
+                {isVip ? (
+                  <AuroraText className="text-3xl font-bold">{title}</AuroraText>
+                ) : (
+                  title
+                )}
+              </h1>
+              {isVip && (
+                <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 px-2.5 py-1 text-xs font-bold text-amber-900 shadow-md shadow-amber-500/50">
+                  <Crown className="size-3 fill-amber-900" />
+                  VIP
+                </span>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground">
               {data.album_title || 'Unknown album'} <span aria-hidden="true">•</span> {formatDate(data.release_date)}
             </p>
@@ -314,18 +336,29 @@ function SongDetailPage() {
           </Button>
         </div>
 
-        <Card className="border-border/70 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-2xl">{data.name}</CardTitle>
+        <Card className={`border-border/70 shadow-sm ${
+          isVip ? "border-2 border-amber-400/30 shadow-lg shadow-amber-500/20 relative overflow-hidden" : ""
+        }`}>
+          {isVip && (
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-yellow-500/5 to-amber-500/5 pointer-events-none" />
+          )}
+          <CardHeader className="relative">
+            <CardTitle className={`text-2xl ${isVip ? "text-amber-900 dark:text-amber-100" : ""}`}>
+              {data.name}
+            </CardTitle>
             <CardDescription className="flex flex-wrap items-center gap-2 text-sm">
-              <span className="font-medium text-foreground">{data.album_title || 'Unknown album'}</span>
+              <span className={`font-medium ${isVip ? "text-amber-800 dark:text-amber-200" : "text-foreground"}`}>
+                {data.album_title || 'Unknown album'}
+              </span>
               <Separator orientation="vertical" className="h-4" />
               <span>{formatDate(data.release_date)}</span>
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 relative">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="rounded-lg border border-border/70 bg-muted/20 p-4">
+              <div className={`rounded-lg border p-4 ${
+                isVip ? "border-amber-400/40 bg-gradient-to-br from-amber-500/10 via-yellow-500/5 to-amber-500/10 shadow-sm" : "border-border/70 bg-muted/20"
+              }`}>
                 <p className="text-xs font-medium uppercase text-muted-foreground">Average rating</p>
                 <div className="mt-2 flex items-center gap-3">
                   <RatingStars value={avg} disabled size={18} />
@@ -335,8 +368,12 @@ function SongDetailPage() {
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">{data.rating_count} rating{data.rating_count === 1 ? '' : 's'}</p>
               </div>
-              <div className="rounded-lg border border-border/70 bg-muted/20 p-4">
-                <p className="text-xs font-medium uppercase text-muted-foreground">Your rating</p>
+              <div className={`rounded-lg border p-4 ${
+                isVip ? "border-amber-400/40 bg-gradient-to-br from-amber-500/10 via-yellow-500/5 to-amber-500/10 shadow-sm" : "border-border/70 bg-muted/20"
+              }`}>
+                <p className={`text-xs font-medium uppercase ${isVip ? "text-amber-700 dark:text-amber-300" : "text-muted-foreground"}`}>
+                  Your rating
+                </p>
                 {authUid ? (
                   <div className="space-y-2">
                     <div className="flex items-center gap-3">
@@ -366,8 +403,12 @@ function SongDetailPage() {
                   <p className="text-sm text-muted-foreground">Log in to rate this song.</p>
                 )}
               </div>
-              <div className="rounded-lg border border-border/70 bg-muted/20 p-4">
-                <p className="text-xs font-medium uppercase text-muted-foreground">Release</p>
+              <div className={`rounded-lg border p-4 ${
+                isVip ? "border-amber-400/40 bg-gradient-to-br from-amber-500/10 via-yellow-500/5 to-amber-500/10 shadow-sm" : "border-border/70 bg-muted/20"
+              }`}>
+                <p className={`text-xs font-medium uppercase ${isVip ? "text-amber-700 dark:text-amber-300" : "text-muted-foreground"}`}>
+                  Release
+                </p>
                 <p className="mt-2 text-sm text-foreground">{formatDate(data.release_date)}</p>
                 <div className="text-xs text-muted-foreground">
                   Album:{' '}
@@ -388,8 +429,14 @@ function SongDetailPage() {
 
             <Separator />
 
-            <div className="rounded-lg border border-dashed border-border/70 bg-muted/10 p-4">
-              <p className="text-xs font-medium uppercase text-muted-foreground mb-2">Tags</p>
+            <div className={`rounded-lg border border-dashed p-4 ${
+              isVip ? "border-amber-400/40 bg-gradient-to-br from-amber-500/10 via-yellow-500/5 to-amber-500/10" : "border-border/70 bg-muted/10"
+            }`}>
+              <p className={`text-xs font-medium uppercase mb-2 ${
+                isVip ? "text-amber-700 dark:text-amber-300" : "text-muted-foreground"
+              }`}>
+                Tags
+              </p>
               {data.tags ? (
                 <div className="flex flex-wrap gap-2">
                   {data.tags
@@ -405,8 +452,14 @@ function SongDetailPage() {
               )}
             </div>
 
-            <div className="rounded-lg border border-border/70 bg-muted/20 p-4 space-y-3">
-              <p className="text-xs font-medium uppercase text-muted-foreground">Actions</p>
+            <div className={`rounded-lg border p-4 space-y-3 ${
+              isVip ? "border-amber-400/40 bg-gradient-to-br from-amber-500/10 via-yellow-500/5 to-amber-500/10" : "border-border/70 bg-muted/20"
+            }`}>
+              <p className={`text-xs font-medium uppercase ${
+                isVip ? "text-amber-700 dark:text-amber-300" : "text-muted-foreground"
+              }`}>
+                Actions
+              </p>
               {!authUid ? (
                 <p className="text-sm text-muted-foreground">Log in to favorite or add to playlists.</p>
               ) : (

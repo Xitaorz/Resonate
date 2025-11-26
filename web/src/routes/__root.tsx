@@ -21,6 +21,7 @@ import {
 import { Dialog, DialogTrigger } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { useAuth, type AuthUser } from '@/hooks/use-auth'
+import { AuroraText } from '@/components/ui/aurora-text'
 
 const LoginDialog = lazy(() => import('@/components/auth/LoginDialog'))
 const SignupDialog = lazy(() => import('@/components/auth/SignupDialog'))
@@ -186,26 +187,54 @@ export const Route = createRootRoute({
       }
     }
 
+    const isVip = auth?.user?.isvip === 1
+
     return (
       <div className="h-dvh w-dvw overscroll-none flex">
         <SidebarProvider className="overscroll-none">
-          <Sidebar collapsible="icon" className="overscroll-none">
+          <Sidebar 
+            collapsible="icon" 
+            className={`overscroll-none ${
+              isVip ? "border-r-2 border-amber-400/40 shadow-lg shadow-amber-500/20" : ""
+            }`}
+          >
+            {isVip && (
+              <div className="absolute inset-0 bg-gradient-to-b from-amber-500/5 via-yellow-500/5 to-amber-500/5 pointer-events-none z-0" />
+            )}
             {auth ? (
-              <SidebarHeader className="border-b px-3 py-2">
+              <SidebarHeader className={`border-b px-3 py-2 relative ${
+                isVip ? "bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-amber-500/10 border-amber-400/30" : ""
+              }`}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 flex-col gap-1">
-                    <span className="text-base font-semibold leading-tight">Resonate</span>
+                    <span className={`text-base font-semibold leading-tight ${
+                      isVip ? "bg-gradient-to-r from-amber-600 to-yellow-600 bg-clip-text text-transparent" : ""
+                    }`}>
+                      {isVip ? (
+                        <AuroraText className="text-base font-bold">Resonate</AuroraText>
+                      ) : (
+                        "Resonate"
+                      )}
+                    </span>
                     <div className="text-xs text-muted-foreground">
-                      <div className="font-medium text-foreground line-clamp-1">
-                        {auth.user?.username || auth.user?.email}
+                      <div className="font-medium line-clamp-1">
+                        {auth.user?.isvip === 1 ? (
+                          <AuroraText className="text-sm font-bold">
+                            {auth.user?.username || auth.user?.email}
+                          </AuroraText>
+                        ) : (
+                          <span className="text-foreground">{auth.user?.username || auth.user?.email}</span>
+                        )}
                       </div>
-                      <div className="truncate">{auth.user?.email}</div>
+                      <div className={`truncate ${isVip ? "text-amber-700/80 dark:text-amber-300/80" : ""}`}>
+                        {auth.user?.email}
+                      </div>
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     {auth.user?.isvip === 1 ? (
-                      <div className="flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-[11px] font-semibold text-amber-800">
-                        <Crown className="size-3" />
+                      <div className="flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 px-3 py-1 text-[11px] font-bold text-amber-900 shadow-lg shadow-amber-500/50 animate-pulse">
+                        <Crown className="size-3 fill-amber-900" />
                         VIP
                       </div>
                     ) : (
@@ -293,7 +322,9 @@ export const Route = createRootRoute({
                 </Dialog>
               </>
             )}
-            <SidebarContent className="overscroll-none">
+            <SidebarContent className={`overscroll-none relative ${
+              isVip ? "bg-gradient-to-b from-amber-500/3 via-transparent to-transparent" : ""
+            }`}>
               <SidebarGroup className="overscroll-none">
                 <SidebarGroupContent className="pt-2">
                   <SidebarMenu>
@@ -305,10 +336,32 @@ export const Route = createRootRoute({
                           : pathname === item.to
                       return (
                         <SidebarMenuItem key={item.to}>
-                          <SidebarMenuButton asChild isActive={isActive}>
+                          <SidebarMenuButton 
+                            asChild 
+                            isActive={isActive}
+                            className={isVip ? (
+                              isActive 
+                                ? "bg-gradient-to-r from-amber-400/20 via-yellow-400/10 to-amber-400/20 border-l-2 border-amber-400/50 shadow-sm hover:from-amber-400/30 hover:via-yellow-400/15 hover:to-amber-400/30" 
+                                : "hover:bg-amber-400/10 hover:border-l-2 hover:border-amber-400/30 transition-all"
+                            ) : ""}
+                          >
                             <Link to={item.to} params={item.params}>
-                              <Icon className="size-4" />
-                              <span>{item.label}</span>
+                              <Icon className={`size-4 transition-colors ${
+                                isVip && isActive 
+                                  ? "text-amber-700 dark:text-amber-300" 
+                                  : isVip 
+                                    ? "text-amber-600/70 dark:text-amber-400/70" 
+                                    : ""
+                              }`} />
+                              <span className={
+                                isVip && isActive 
+                                  ? "text-amber-900 dark:text-amber-100 font-semibold" 
+                                  : isVip 
+                                    ? "text-amber-800/80 dark:text-amber-200/80" 
+                                    : ""
+                              }>
+                                {item.label}
+                              </span>
                             </Link>
                           </SidebarMenuButton>
                         </SidebarMenuItem>
@@ -318,12 +371,16 @@ export const Route = createRootRoute({
                 </SidebarGroupContent>
               </SidebarGroup>
             </SidebarContent>
-            <SidebarFooter className="border-t px-3 py-2">
+            <SidebarFooter className={`border-t px-3 py-2 relative ${
+              isVip ? "bg-gradient-to-t from-amber-500/10 via-yellow-500/5 to-transparent border-amber-400/30" : ""
+            }`}>
               {auth ? (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-full justify-start"
+                  className={`w-full justify-start ${
+                    isVip ? "hover:bg-amber-400/20 hover:text-amber-900 dark:hover:text-amber-100" : ""
+                  }`}
                   onClick={() => {
                     setAuth(null)
                     setVipError(null)

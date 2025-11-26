@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
+import { Crown } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -10,6 +11,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { useAuth } from '@/hooks/use-auth'
+import { AuroraText } from '@/components/ui/aurora-text'
 
 type Ranking = {
   yearweek: number
@@ -44,6 +47,8 @@ function formatYearWeek(yearweek: number): string {
 }
 
 function WeeklyRankingPage() {
+  const auth = useAuth()
+  const isVip = auth?.user?.isvip === 1
   const { data, isLoading, isFetching, error, refetch } = useQuery<Ranking[], Error>({
     queryKey: ['weekly-ranking'],
     queryFn: fetchWeeklyRanking,
@@ -111,7 +116,7 @@ function WeeklyRankingPage() {
     return (
       <div className="space-y-6">
         {grouped.map(({ week, entries }) => (
-          <Card key={week}>
+          <Card key={week} className={isVip ? "border-amber-400/20 shadow-md shadow-amber-500/10" : ""}>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-2xl font-semibold">
@@ -154,11 +159,30 @@ function WeeklyRankingPage() {
   })()
 
   return (
-    <div className="flex justify-center px-4 py-10">
-      <div className="w-full max-w-5xl space-y-6">
+    <div className={`flex justify-center px-4 py-10 min-h-screen ${
+      isVip ? "bg-gradient-to-br from-amber-50/50 via-yellow-50/30 to-amber-50/50 dark:from-amber-950/20 dark:via-yellow-950/10 dark:to-amber-950/20" : ""
+    }`}>
+      {isVip && (
+        <div className="fixed inset-0 bg-gradient-to-br from-amber-500/5 via-yellow-500/5 to-amber-500/5 pointer-events-none -z-10" />
+      )}
+      <div className="w-full max-w-5xl space-y-6 relative">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight">Weekly Favorites</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-semibold tracking-tight">
+                {isVip ? (
+                  <AuroraText className="text-3xl font-bold">Weekly Favorites</AuroraText>
+                ) : (
+                  'Weekly Favorites'
+                )}
+              </h1>
+              {isVip && (
+                <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 px-2.5 py-1 text-xs font-bold text-amber-900 shadow-md shadow-amber-500/50">
+                  <Crown className="size-3 fill-amber-900" />
+                  VIP
+                </span>
+              )}
+            </div>
             <p className="text-muted-foreground">
               Chart updates on schedule from the database snapshot.
             </p>
