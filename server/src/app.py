@@ -418,8 +418,8 @@ def create_app() -> Flask:
             return jsonify({"error": "uid required"}), 401
         if not name:
             return jsonify({"error": "name is required"}), 400
-        if visibility not in ("public", "private", "unlisted"):
-            return jsonify({"error": "visibility must be one of public, private, unlisted"}), 400
+        if visibility not in ("public", "private"):
+            return jsonify({"error": "visibility must be one of public, private"}), 400
 
         try:
             plstid = db.create_playlist(int(uid), str(name), description, visibility)
@@ -469,8 +469,10 @@ def create_app() -> Flask:
         if not playlist:
             return jsonify({"error": "playlist not found"}), 404
         auth_uid = _get_uid_from_request()
-        # Allow owners through; allow public/unlisted without auth
-        if playlist.get("visibility") == "private" and auth_uid is not None and auth_uid != int(playlist.get("uid", -1)):
+        # Allow owners through; only allow public playlists to be viewed by others
+        playlist_visibility = playlist.get("visibility")
+        playlist_owner_uid = int(playlist.get("uid", -1))
+        if playlist_visibility != "public" and (auth_uid is None or auth_uid != playlist_owner_uid):
             return jsonify({"error": "forbidden"}), 403
         try:
             songs = db.list_playlist_songs(plstid)
@@ -508,8 +510,8 @@ def create_app() -> Flask:
         playlist = db.get_playlist(plstid)
         if not playlist:
             return jsonify({"error": "playlist not found"}), 404
-        if playlist.get("visibility") == "private" and int(playlist.get("uid", -1)) != uid:
-            return jsonify({"error": "cannot follow a private playlist"}), 403
+        if playlist.get("visibility") != "public":
+            return jsonify({"error": "can only follow public playlists"}), 403
         try:
             db.follow_playlist(uid, plstid)
             return jsonify({"uid": uid, "plstid": plstid, "following": True}), 201

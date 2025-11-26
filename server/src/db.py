@@ -361,13 +361,13 @@ class DB:
 
     def search_playlists(self, query: str, uid: Optional[int] = None) -> List[Dict[str, Any]]:
         """
-        Search playlists by name. Includes public/unlisted lists and the caller's own private lists.
+        Search playlists by name. Only includes public playlists.
         """
         pattern = f"%{query}%"
         sql = self._sql("search_playlists.sql")
         conn = self._ensure_conn()
         with conn.cursor() as cur:
-            cur.execute(sql, (pattern, uid if uid is not None else -1))
+            cur.execute(sql, (pattern,))
             rows = cur.fetchall()
         return list(rows)
 
@@ -403,10 +403,10 @@ class DB:
                 FROM user_follow_playlist ufp
                 JOIN playlists p ON p.plstid = ufp.plstid
                 WHERE ufp.uid = %s
-                  AND (p.visibility != 'private' OR p.uid = %s)
+                  AND p.visibility = 'public'
                 ORDER BY ufp.followed_at DESC
                 """,
-                (uid, uid),
+                (uid,),
             )
             rows = cur.fetchall()
         return list(rows)

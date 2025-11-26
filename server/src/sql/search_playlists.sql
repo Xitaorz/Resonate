@@ -7,6 +7,6 @@ SELECT
   created_at
 FROM playlists
 WHERE name LIKE %s
-  AND (visibility != 'private' OR uid = %s)
+  AND visibility = 'public'
 ORDER BY created_at DESC
 LIMIT 50;

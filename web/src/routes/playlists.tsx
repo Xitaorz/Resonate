@@ -236,7 +236,6 @@ function PlaylistsPage() {
               >
                 <option value="public">Public</option>
                 <option value="private">Private</option>
-                <option value="unlisted">Unlisted</option>
               </select>
               <Button
                 disabled={!form.name || createPlaylist.isPending}
