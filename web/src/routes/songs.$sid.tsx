@@ -304,7 +304,6 @@ function SongDetailPage() {
       <div className="w-full max-w-4xl space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-1">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Song ID {data.sid}</p>
             <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
             <p className="text-sm text-muted-foreground">
               {data.album_title || 'Unknown album'} <span aria-hidden="true">•</span> {formatDate(data.release_date)}
