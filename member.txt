@@ -1,10 +1,24 @@
-Yidan Wang: 
-As of Milestone 1: built E/R diagram, wrote interface doc, wrote features 3 and 4 description and sql queries, added backend APIs and docker compose file.
-Carl Yan: 
+### Yidan Wang: 
+As of Milestone 1: built E/R diagram, wrote interface doc, wrote features 3 and 4 description and sql queries, added backend APIs and Docker compose file.
+As of Milestone 2: discussed feature 5, implemented the frontend, backend and sql query for feature 5, wrote description in report, fix bug.
+As of Final Demo: implemented the advanced authorization feature, built the backend API and UI for multiple core pages (including song details, playlist following, VIP enrollment, and album–song views), completed the written report, and resolved several additional bugs across the application.
+
+### Carl Yan: 
 As of Milestone 1: built E/R diagram, wrote relational data model, generated sample data base, gave relational schemas for each table
-David Dong: 
+As of Milestone 2: discussed feature 5, populated sample database for testing feature queries. Fixed init function.
+As of Final Demo: Implemented playlists logic, including create playlist, add to playlist and view play list (own or others) and their corresponding ui; Implemented weekly ranking using scheduler and view to support automatic weekly update; Implemented favorites and its ui. Resolved several additional bugs.
+
+### David Dong: 
 As of Milestone 1: built E/R diagram, verified the outputs of each feature based on sample database, wrote queries for advanced feature (search using tags)
-Molly Wu: 
+As of Milestone 2: discussed feature 5, conducted test-production.out files for feature 6-9, populated production database.
+As of Final Demo: finished advance feature (tags), wrote API for search using tags. Wrote UI for displaying tags along with unique emoji. Added API for basic feature displaying user’s number of favourite songs and playlists. Modified some UI (right align “view details” in the search page, etc.) to make the page look clean.
+
+### Molly Wu: 
 As of Milestone 1: built E/R diagram, wrote report doc, wrote features 1 and 2 description and sql queries, contribute to data table creations and insertions
-Tom Wang: 
+As of Milestone 2: discuss and produce idea for feature 5. Tested features (feature 1, 2, 3) and add snapshots and test case descriptions
+As of Final Demo: add advanced feature recommendations sql query R12, change error message to adding songs existing in playlist, add album list of songs when clicking on album title in song details, implement delete playlist api, add unfavorite option, and add vip button to turn user into vip mode and store user to vip users table
+
+### Tom Wang: 
 As of Milestone 1: built E/R diagram, imported production and sample data set, parse dataset, built UI for basic features
+AS of Milestone 2: updated import script for the production dataset, implemented frontend code for the average ratings feature. 
+As of Final Demo: added an advanced feature for updating user profiles with transactions and contributed to the trigger for creating default user playlists. Implemented and updated frontend pages and component for many API endpoints. Implemented user authentication with JWT on both the frontend and backend. Updated Dockerfiles and the docker-compose configuration file. Contributed to special visual effects for the VIP users. Improved database initialization process. Formulated SQL queries for paginated search. 
