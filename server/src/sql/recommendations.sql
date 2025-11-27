@@ -26,14 +26,13 @@ candidate_songs AS (
         WHERE ufs2.uid = %(uid)s
     )
 )
-SELECT 
+SELECT
     cs.sid,
     cs.name,
-    AVG(r.rate_value)                      AS avg_rating,
-    COUNT(DISTINCT vst.tag)                AS matched_tags,
-    SUM(utc.tag_count)                     AS tag_match_score,
-    COALESCE(AVG(r.rate_value), 0)
-        * SUM(utc.tag_count)               AS recommendation_score
+    AVG(r.rate_value)   AS avg_rating,
+    COUNT(DISTINCT vst.tag)   AS matched_tags,
+    SUM(utc.tag_count)   AS tag_match_score,
+    (COALESCE(AVG(r.rate_value), 0) * SUM(utc.tag_count) * COUNT(r.rid))   AS recommendation_score
 FROM candidate_songs cs
 JOIN virt_song_tag vst   ON vst.sid = cs.sid
 JOIN top_tags tt         ON tt.tag_id = vst.tag
