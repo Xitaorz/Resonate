@@ -4,6 +4,7 @@ SELECT
   GROUP_CONCAT(DISTINCT a.name  ORDER BY a.name  SEPARATOR ', ') AS artist_name,
   GROUP_CONCAT(DISTINCT a.artid ORDER BY a.artid SEPARATOR ',')   AS artist_ids,
   al.title AS album_name,
+  MIN(al.alid) AS album_id,
   al.release_date,
   GROUP_CONCAT(DISTINCT t.name  ORDER BY t.name  SEPARATOR ', ') AS tags
 FROM songs AS s

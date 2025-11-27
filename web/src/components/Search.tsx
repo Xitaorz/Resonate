@@ -25,6 +25,7 @@ type Result = {
   artist_id: string;
   release_date: string;
   album_name: string;
+  album_id?: string | null;
   tags?: string | null;
 };
 
@@ -211,6 +212,7 @@ export function Search() {
                     }));
                   })(),
                   album: song.album_name,
+                  albumId: song.album_id || null,
                   tags: song.tags || null,
                 }))}
               />

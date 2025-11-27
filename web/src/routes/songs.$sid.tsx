@@ -22,6 +22,8 @@ type SongDetail = {
   avg_rating: number | null
   rating_count: number
   tags: string | null
+  artist_name: string | null
+  artist_ids: string | null
 }
 
 type UserRatingPayload = {
@@ -57,6 +59,8 @@ async function fetchSongDetail(sid: string): Promise<SongDetail> {
     avg_rating: data?.avg_rating !== undefined && data?.avg_rating !== null ? Number(data.avg_rating) : null,
     rating_count: data?.rating_count !== undefined && data?.rating_count !== null ? Number(data.rating_count) : 0,
     tags: data?.tags ?? null,
+    artist_name: data?.artist_name ?? null,
+    artist_ids: data?.artist_ids ?? null,
   }
 }
 
@@ -328,6 +332,35 @@ function SongDetailPage() {
               )}
             </div>
             <p className="text-sm text-muted-foreground">
+              {(() => {
+                const artistNames = (data.artist_name || "").split(",").map((n: string) => n.trim()).filter(Boolean);
+                const artistIds = (data.artist_ids || "").split(",").map((i: string) => i.trim()).filter(Boolean);
+                if (artistNames.length > 0) {
+                  return (
+                    <>
+                      <span>Artist: </span>
+                      {artistNames.map((name: string, index: number) => (
+                        <span key={`top-${data.sid}-artist-${index}`}>
+                          {index > 0 ? <span>, </span> : null}
+                          {artistIds[index] ? (
+                            <Link
+                              to="/artist/$artistId"
+                              params={{ artistId: artistIds[index] }}
+                              className="text-blue-500 hover:underline"
+                            >
+                              {name}
+                            </Link>
+                          ) : (
+                            <span>{name}</span>
+                          )}
+                        </span>
+                      ))}
+                      <span aria-hidden="true"> • </span>
+                    </>
+                  );
+                }
+                return null;
+              })()}
               {data.album_title || 'Unknown album'} <span aria-hidden="true">•</span> {formatDate(data.release_date)}
             </p>
           </div>
@@ -347,6 +380,35 @@ function SongDetailPage() {
               {data.name}
             </CardTitle>
             <CardDescription className="flex flex-wrap items-center gap-2 text-sm">
+              {(() => {
+                const artistNames = (data.artist_name || "").split(",").map((n: string) => n.trim()).filter(Boolean);
+                const artistIds = (data.artist_ids || "").split(",").map((i: string) => i.trim()).filter(Boolean);
+                if (artistNames.length > 0) {
+                  return (
+                    <>
+                      <span className="text-muted-foreground">Artist:</span>
+                      {artistNames.map((name: string, index: number) => (
+                        <span key={`${data.sid}-artist-${index}`}>
+                          {index > 0 ? <span className="text-muted-foreground">, </span> : null}
+                          {artistIds[index] ? (
+                            <Link
+                              to="/artist/$artistId"
+                              params={{ artistId: artistIds[index] }}
+                              className="text-blue-500 hover:underline"
+                            >
+                              {name}
+                            </Link>
+                          ) : (
+                            <span>{name}</span>
+                          )}
+                        </span>
+                      ))}
+                      <Separator orientation="vertical" className="h-4" />
+                    </>
+                  );
+                }
+                return null;
+              })()}
               <span className={`font-medium ${isVip ? "text-amber-800 dark:text-amber-200" : "text-foreground"}`}>
                 {data.album_title || 'Unknown album'}
               </span>
