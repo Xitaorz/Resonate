@@ -513,38 +513,69 @@ class DB:
     ) -> Dict[str, Any]:
         conn = self._ensure_conn()
         try:
-            original_autocommit = conn.get_autocommit()
-        except Exception:
-            original_autocommit = True
-
-        try:
             from flask import has_app_context
             close_after = not has_app_context()
         except Exception:
             close_after = True
 
         try:
-            conn.autocommit(False)
+            original_autocommit = conn.get_autocommit()
+        except Exception:
+            original_autocommit = True
+
+        # Ensure hobby list is clean and deduped when provided
+        cleaned_hobbies: Optional[List[str]] = None
+        if hobbies is not None:
+            cleaned_hobbies = []
+            for hobby in hobbies:
+                trimmed = str(hobby).strip()
+                if trimmed:
+                    cleaned_hobbies.append(trimmed)
+            cleaned_hobbies = list(dict.fromkeys(cleaned_hobbies))
+
+        fields_order = [
+            "username",
+            "email",
+            "gender",
+            "age",
+            "street",
+            "city",
+            "province",
+            "mbti",
+        ]
+
+        # Build params for CASE-based update so we can keep or null out fields explicitly
+        update_params: List[Any] = []
+        for field in fields_order:
+            is_set = field in user_fields
+            update_params.append(1 if is_set else 0)
+            update_params.append(user_fields.get(field))
+        update_params.append(uid)
+
+        start_txn_sql = self._sql("update_user_profile_start.sql")
+        select_user_sql = self._sql("update_user_profile_select_for_update.sql")
+        update_sql = self._sql("update_user_profile_update.sql")
+        delete_hobbies_sql = self._sql("update_user_profile_delete_hobbies.sql")
+        insert_hobby_sql = self._sql("update_user_profile_insert_hobby.sql")
+        commit_txn_sql = self._sql("update_user_profile_commit.sql")
+
+        try:
             with conn.cursor() as cur:
-                cur.execute("SELECT uid FROM users WHERE uid = %s FOR UPDATE", (uid,))
+                cur.execute(start_txn_sql)
+
+                cur.execute(select_user_sql, (uid,))
                 if cur.fetchone() is None:
                     raise ValueError("User not found")
 
-                if user_fields:
-                    set_clause = ", ".join(f"{col} = %s" for col in user_fields.keys())
-                    values = list(user_fields.values()) + [uid]
-                    cur.execute(f"UPDATE users SET {set_clause} WHERE uid = %s", values)
+                cur.execute(update_sql, update_params)
 
-                if hobbies is not None:
-                    cur.execute("DELETE FROM user_hobbies WHERE uid = %s", (uid,))
-                    if hobbies:
-                        hobby_rows = [(uid, hobby) for hobby in hobbies]
-                        cur.executemany(
-                            "INSERT INTO user_hobbies (uid, hobby) VALUES (%s, %s)",
-                            hobby_rows
-                        )
+                if cleaned_hobbies is not None:
+                    cur.execute(delete_hobbies_sql, (uid,))
+                    if cleaned_hobbies:
+                        hobby_rows = [(uid, hobby) for hobby in cleaned_hobbies]
+                        cur.executemany(insert_hobby_sql, hobby_rows)
 
-            conn.commit()
+                cur.execute(commit_txn_sql)
         except Exception as exc:
             try:
                 conn.rollback()
