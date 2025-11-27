@@ -39,7 +39,6 @@ function PlaylistsPage() {
     select: (state) => state.location.pathname,
   })
   
-  // Only show the main content on the exact /playlists route, not on child routes
   const isExactPlaylistsRoute = pathname === '/playlists'
 
   const {
@@ -204,8 +203,6 @@ function PlaylistsPage() {
     )
   })()
 
-  // If we're on a child route (like /playlists/followed), 
-  // only render the Outlet (child component), not the parent content
   if (!isExactPlaylistsRoute) {
     return <Outlet />
   }

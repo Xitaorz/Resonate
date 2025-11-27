@@ -1,4 +1,3 @@
--- Display last completed week (not the current in-progress week)
 SELECT
   yearweek,
   rank_in_week,

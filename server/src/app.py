@@ -17,7 +17,6 @@ JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret-change-me")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_TTL_MINUTES = int(os.getenv("JWT_TTL_MINUTES", "60"))
 
-# Simple access token generator
 def _make_access_token(user: dict) -> str:
     now = datetime.now(timezone.utc)
     payload = {
@@ -63,12 +62,9 @@ def create_app() -> Flask:
                     print("Database initialization complete.")
                     import_data()
                     print("Data imported!")
-            # Ensure weekly view exists
             db.execute_script(load_sql("src/sql/weekly-ranking-view.sql"))
-            # Ensure snapshot is up to date (current week) even if event can't be created
             db.execute_script(load_sql("src/sql/weekly-ranking-refresh.sql"))
             print("Weekly ranking snapshot refreshed.")
-            # Try to register weekly event (best effort)
             try:
                 db.execute_script(load_sql("src/sql/weekly-ranking-event.sql"))
                 print("Weekly ranking event ensured.")
@@ -87,7 +83,6 @@ def create_app() -> Flask:
             print(f"Weekly view refresh failed: {e}")
 
     scheduler = BackgroundScheduler(timezone="UTC", daemon=True)
-    # Run every Monday at 00:05 UTC to roll the week snapshot
     scheduler.add_job(refresh_weekly_view, "cron", day_of_week="mon", hour=0, minute=5)
     scheduler.start()
     
@@ -231,7 +226,7 @@ def create_app() -> Flask:
                 trimmed = hobby.strip()
                 if trimmed:
                     cleaned.append(trimmed)
-            hobbies = list(dict.fromkeys(cleaned))  # deduplicate while preserving order
+            hobbies = list(dict.fromkeys(cleaned))
 
         if not user_fields and hobbies is None:
             return jsonify({"error": "No profile fields or hobbies to update"}), 400
@@ -347,7 +342,6 @@ def create_app() -> Flask:
 
     @app.get("/songs/<sid>/rating")
     def get_song_rating(sid: str):
-        # Accept uid via header or query param
         uid_param = request.args.get("uid")
         header_uid = request.headers.get("X-User-Id")
         uid_val = header_uid or uid_param
@@ -407,8 +401,6 @@ def create_app() -> Flask:
             return jsonify({"error": str(e)}), 500
 
     def _get_uid_from_request(payload: dict | None = None) -> int | None:
-        # In a future login system, this should pull from session/JWT.
-        # For now, accept header override or payload field.
         header_uid = request.headers.get("X-User-Id")
         if header_uid and header_uid.isdigit():
             return int(header_uid)
@@ -432,7 +424,6 @@ def create_app() -> Flask:
             return jsonify({"error": "visibility must be one of public, private"}), 400
 
         try:
-            # Check if a playlist with the same name already exists for this user
             if db.playlist_name_exists(int(uid), str(name)):
                 return jsonify({"error": "You already have a playlist with this name. Please choose a different name."}), 400
             
@@ -483,7 +474,6 @@ def create_app() -> Flask:
         if not playlist:
             return jsonify({"error": "playlist not found"}), 404
         auth_uid = _get_uid_from_request()
-        # Allow owners through; only allow public playlists to be viewed by others
         playlist_visibility = playlist.get("visibility")
         playlist_owner_uid = int(playlist.get("uid", -1))
         if playlist_visibility != "public" and (auth_uid is None or auth_uid != playlist_owner_uid):

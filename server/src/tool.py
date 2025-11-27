@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Union
 
-# Project root is the parent of the src/ directory (where this file lives)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 

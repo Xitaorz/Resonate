@@ -29,7 +29,6 @@ SQL_DIR = Path(__file__).resolve().parent / "sql"
 class DB:
 
     def __init__(self) -> None:
-        # Store connection config only (no connection stored here)
         self._config: Dict[str, Any] = {}
     
     def _sql(self, filename: str) -> str:
@@ -71,7 +70,6 @@ class DB:
             autocommit=autocommit,
         )
         
-        # Activate role based on user (MySQL 8.0 roles need explicit activation)
         user = self._config['user']
         try:
             with conn.cursor() as cur:
@@ -80,7 +78,6 @@ class DB:
                 elif user == 'admin_user':
                     cur.execute("SET ROLE admin_role")
         except Exception:
-            # If role activation fails, continue anyway (might not be using role-based auth)
             pass
         
         return conn
@@ -94,24 +91,18 @@ class DB:
         return row
 
     def _ensure_conn(self) -> pymysql.connections.Connection:
-        # If running inside Flask app context, reuse g.db_conn.
-        # Otherwise return a fresh connection (caller must close it).
         try:
             from flask import has_app_context, g
         except Exception:
-            # Flask not available for some reason: return a fresh connection
             return self.get_connection()
 
         if has_app_context():
             if not hasattr(g, 'db_conn') or g.db_conn is None:
                 g.db_conn = self.get_connection()
             return g.db_conn
-        # No app context -> caller expects a standalone connection
         return self.get_connection()
 
-    #execute sql 
     def execute_script(self, sql_text: str) -> None:
-        # Ensure we close the connection if we created a temporary one
         from flask import has_app_context
         conn = self._ensure_conn()
         close_after = not has_app_context()
@@ -135,7 +126,6 @@ class DB:
                 except Exception:
                     pass
     
-    #list all users
     def list_users(self) -> List[Dict[str, Any]]:
         sql = self._sql("list_users.sql")
         conn = self._ensure_conn()
@@ -144,7 +134,6 @@ class DB:
             rows = cur.fetchall()
         return list(rows)
     
-    #search for songs, artists, and albums
     def search(self, query: str, limit: int, offset: int) -> List[Dict[str, Any]]:
         search_pattern = f"%{query}%"
         sql = self._sql("search.sql")
@@ -191,7 +180,6 @@ class DB:
             rows = cur.fetchall()
         return list(rows)
 
-    #get songs by artist
     def get_artist_songs(self, artist_id: str) -> List[Dict[str, Any]]:
         sql = self._sql("artist_songs.sql")
         
@@ -201,7 +189,6 @@ class DB:
             rows = cur.fetchall()
         return list(rows)
     
-    #show all tables in the database
     def show_tables(self) -> List[Dict[str, Any]]:
         sql = self._sql("show_tables.sql")
         conn = self._ensure_conn()
@@ -210,7 +197,6 @@ class DB:
             rows = cur.fetchall()
         return list(rows)
     
-    #get average ratings for all songs
     def get_rating_averages(self) -> List[Dict[str, Any]]:
         sql = self._sql("rating_averages.sql")
         conn = self._ensure_conn()
@@ -241,7 +227,6 @@ class DB:
         conn = self.get_connection(autocommit=False)
         try:
             with conn.cursor() as cur:
-                # Check if the user already rated this song
                 cur.execute(
                     "SELECT rid FROM user_rates WHERE uid = %s AND sid = %s LIMIT 1",
                     (uid, sid),
@@ -322,7 +307,6 @@ class DB:
             return int(row["next_pos"] if row and row.get("next_pos") is not None else 1)
 
     def add_song_to_playlist(self, plstid: int, sid: str, position: Optional[int] = None) -> None:
-        # Avoid duplicates so we can return a clean error to the caller
         conn = self._ensure_conn()
         with conn.cursor() as cur:
             cur.execute(
@@ -599,7 +583,6 @@ class DB:
                 if cur.fetchone() is None:
                     raise ValueError("User not found")
 
-                # Detect available columns to avoid referencing missing fields
                 cur.execute("SHOW COLUMNS FROM vip_users")
                 vip_columns = {row["Field"] for row in cur.fetchall()}
 

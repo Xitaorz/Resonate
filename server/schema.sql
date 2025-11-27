@@ -43,7 +43,6 @@ CREATE TABLE IF NOT EXISTS artists (
 
 
 
--- users follow artists
 CREATE TABLE IF NOT EXISTS user_follows_artist (
   uid         BIGINT UNSIGNED NOT NULL,
   artid       VARCHAR(35) NOT NULL,
@@ -59,7 +58,6 @@ CREATE TABLE IF NOT EXISTS albums (
   release_date DATE NULL
 );
 
--- Album ownership (album is owned by one artist)
 CREATE TABLE IF NOT EXISTS album_owned_by_artist (
   alid VARCHAR(35) NOT NULL,
   artid VARCHAR(35) NOT NULL,
@@ -82,7 +80,6 @@ CREATE TABLE IF NOT EXISTS songs (
   speechiness   DECIMAL(5,4) NULL
 );
 
--- Song in album
 CREATE TABLE IF NOT EXISTS album_song (
   alid     VARCHAR(35) NOT NULL,
   sid      VARCHAR(35) NOT NULL,
@@ -94,7 +91,6 @@ CREATE TABLE IF NOT EXISTS album_song (
   CONSTRAINT fk_as_song  FOREIGN KEY (sid)  REFERENCES songs(sid)  ON DELETE CASCADE
 );
 
--- tags and song–tag mapping
 CREATE TABLE IF NOT EXISTS tags (
   tid  BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   name VARCHAR(100) NOT NULL UNIQUE
@@ -110,11 +106,10 @@ CREATE TABLE IF NOT EXISTS playlists (
   CONSTRAINT fk_pl_owner FOREIGN KEY (uid) REFERENCES users(uid) ON DELETE CASCADE
 );
 
--- Playlist contains songs (its ordered)
 CREATE TABLE IF NOT EXISTS playlist_song (
   plstid   BIGINT UNSIGNED NOT NULL,
   sid      VARCHAR(35) NOT NULL,
-  position INT UNSIGNED NOT NULL, -- 1-based order in playlist
+  position INT UNSIGNED NOT NULL,
   added_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (plstid, sid),
   UNIQUE KEY uk_playlist_position (plstid, position),
@@ -122,7 +117,6 @@ CREATE TABLE IF NOT EXISTS playlist_song (
   CONSTRAINT fk_ps_song     FOREIGN KEY (sid)     REFERENCES songs(sid)     ON DELETE CASCADE
 );
 
--- Users can favorite songs
 CREATE TABLE IF NOT EXISTS user_favorite_song (
   uid       BIGINT UNSIGNED NOT NULL,
   sid       VARCHAR(35) NOT NULL,
@@ -144,14 +138,12 @@ CREATE TABLE IF NOT EXISTS user_rates(
   uid        BIGINT UNSIGNED NOT NULL,
   sid        VARCHAR(35) NOT NULL,
   rated_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  -- we only allow one rating per user per song
   UNIQUE KEY uk_user_song_rating (uid, sid, rid),
   CONSTRAINT fk_sr_user FOREIGN KEY (uid) REFERENCES users(uid) ON DELETE CASCADE,
   CONSTRAINT fk_sr_song FOREIGN KEY (sid) REFERENCES songs(sid) ON DELETE CASCADE,
   CONSTRAINT fk_sr_rating FOREIGN KEY (rid) REFERENCES ratings(rid) ON DELETE CASCADE
 );
 
--- users can follow playlists
 CREATE TABLE IF NOT EXISTS user_follow_playlist (
   uid       BIGINT UNSIGNED NOT NULL,
   plstid    BIGINT UNSIGNED NOT NULL,
@@ -161,7 +153,6 @@ CREATE TABLE IF NOT EXISTS user_follow_playlist (
   CONSTRAINT fk_ufp_playlist FOREIGN KEY (plstid) REFERENCES playlists(plstid) ON DELETE CASCADE
 );
 
--- indexes 
 CREATE INDEX idx_album_owned_by_artist_artid ON album_owned_by_artist(artid);
 CREATE INDEX idx_album_owned_by_artist_alid  ON album_owned_by_artist(alid);
 

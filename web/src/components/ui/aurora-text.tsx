@@ -27,7 +27,6 @@ export const AuroraText = memo(
     return (
       <span className={`relative inline-block ${className}`}>
         <span className="sr-only">{children}</span>
-        {/* Glow effect behind text */}
         <span
           className="absolute inset-0 blur-xl opacity-50 animate-aurora"
           style={{
@@ -38,7 +37,6 @@ export const AuroraText = memo(
           }}
           aria-hidden="true"
         />
-        {/* Main text */}
         <span
           className="relative animate-aurora bg-clip-text text-transparent font-bold drop-shadow-[0_0_8px_rgba(255,0,128,0.5)]"
           style={gradientStyle}
@@ -46,7 +44,6 @@ export const AuroraText = memo(
         >
           {children}
         </span>
-        {/* Shimmer effect overlay */}
         <span
           className="absolute inset-0 animate-shimmer bg-gradient-to-r from-transparent via-white/30 to-transparent blur-[2px] pointer-events-none"
           aria-hidden="true"

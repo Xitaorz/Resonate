@@ -7,7 +7,6 @@ CREATE TABLE IF NOT EXISTS weekly_fav_rank_snapshot (
   PRIMARY KEY (yearweek, rank_in_week)
 );
 
--- Seed the last completed week immediately so Python queries have data before the first scheduled run
 DELETE FROM weekly_fav_rank_snapshot WHERE yearweek = YEARWEEK(CURRENT_DATE - INTERVAL 1 WEEK, 3);
 
 INSERT INTO weekly_fav_rank_snapshot (yearweek, rank_in_week, song_title, album_title, fav_count)
@@ -26,7 +25,6 @@ ON DUPLICATE KEY UPDATE
   album_title = VALUES(album_title),
   fav_count = VALUES(fav_count);
 
--- Weekly refresh every Monday at 00:05 UTC for the last completed week
 DROP EVENT IF EXISTS refresh_last_week_fav_rank;
 CREATE EVENT refresh_last_week_fav_rank
 ON SCHEDULE EVERY 1 WEEK

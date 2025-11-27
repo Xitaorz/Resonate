@@ -17,7 +17,6 @@ DATASET_FILE_NAME = "tracks_features.csv"
 
 PRODUCTION_DATA_SIZE = 100_000
 
-#Execute sql files to initialize table contents!!!!
 def init_db() -> None:
     db: DB = get_db()
 
@@ -42,7 +41,6 @@ def init_db() -> None:
         "weekly_view": weekly_view,
         "weekly_refresh": weekly_refresh,
         "create_trigger": create_trigger,
-        #"sample_favorites": sample_favorites
     }
 
     for query in init_queries:
@@ -57,7 +55,6 @@ def init_db() -> None:
     print("Database initialized and exampleed.")
 
 def import_data() -> None: 
-    # https://github.com/Kaggle/kagglehub/blob/main/README.md#kaggledatasetadapterpandas
     df = kagglehub.dataset_load(
         KaggleDatasetAdapter.PANDAS,
         "rodolfofigueroa/spotify-12m-songs",
@@ -141,7 +138,6 @@ def execute_sql_file(path: str) -> int:
     print(f"Executed SQL from {sql_path}")
     return 0
 
-#test connection
 def ping() -> int:
     db: DB = get_db()
     if db.ping():
@@ -150,7 +146,6 @@ def ping() -> int:
     print("DB DOWN")
     return 1
 
-#list all rows in the users table
 def list_users() -> int:
     try:
         db: DB = get_db()

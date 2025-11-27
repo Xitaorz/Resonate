@@ -18,12 +18,8 @@ SET DEFAULT ROLE display_role TO 'display_user'@'%';
 SET DEFAULT ROLE admin_role TO 'admin_user'@'%';
 SET DEFAULT ROLE admin_role TO 'app_user'@'%';
 
--- Enable automatic role activation on login
 ALTER USER 'display_user'@'%' DEFAULT ROLE display_role;
 ALTER USER 'admin_user'@'%' DEFAULT ROLE admin_role;
 SET GLOBAL log_bin_trust_function_creators = 1;
 
--- Ensure roles are mandatory (MySQL 8.0.2+)
--- This makes roles activate automatically on connection
 SET GLOBAL activate_all_roles_on_login = ON;
-
