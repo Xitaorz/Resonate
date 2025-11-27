@@ -44,6 +44,7 @@ The backend provides a API and handles all database operations. You can run it u
    cd server
    docker-compose up
    ```
+The production database should be automatically loaded to the database when running docker-compose up.
 
 2. **Start the frontend** (in another terminal):
    ```bash
@@ -54,3 +55,17 @@ The backend provides a API and handles all database operations. You can run it u
 
 The backend API will run on `http://localhost:3000` and the frontend will run on its own port (typically `http://localhost:5173`).
 
+# Manually Importing Production Dataset
+
+With the database container running, change the dir to server and enter venv:
+```sh
+cd server
+python -m venv venv
+source venv/bin/activate
+```
+
+Then run manage script with init argument:
+```sh
+python -m src.manage init
+```
+Make sure when running this command, there is no table/view in the database. If there is any table you might need to drop them. 

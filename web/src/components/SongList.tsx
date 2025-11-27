@@ -11,6 +11,7 @@ type Song = {
   artistId?: string;
   artists?: { name: string; id?: string }[];
   album: string;
+  albumId?: string | null;
   tags?: string | null;
 }
 
@@ -85,7 +86,21 @@ export function SongList({ songs, action }: SongListProps) {
                     ));
                   })()}
                 </p>
-                <p>Album: {song.album}</p>
+                <p className="flex flex-wrap gap-1">
+                  <span className="mr-1">Album:</span>
+                  {song.albumId ? (
+                    <Link
+                      to="/albums/$albumId"
+                      params={{ albumId: song.albumId }}
+                      className="text-blue-500 hover:underline cursor-pointer"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      {song.album}
+                    </Link>
+                  ) : (
+                    <span>{song.album}</span>
+                  )}
+                </p>
                 {song.tags ? (
                   <div className="flex gap-2 flex-wrap mt-1">
                     {song.tags

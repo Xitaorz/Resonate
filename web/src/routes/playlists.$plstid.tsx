@@ -34,19 +34,26 @@ function PlaylistDetailPage() {
   const navigate = useNavigate()
   const auth = useAuth()
   const isVip = auth?.user?.isvip === 1
+  const headerUid = auth?.user?.uid
 
   const { data, isLoading, error, refetch, isFetching } = useQuery<PlaylistDetail, Error>({
-    queryKey: ['playlist-detail', plstid],
+    queryKey: ['playlist-detail', plstid, headerUid],
     queryFn: async () => {
-      const res = await fetch(`/api/playlists/${plstid}`)
+      const headers =
+        headerUid !== undefined
+          ? {
+              'X-User-Id': headerUid,
+            }
+          : undefined
+      const res = await fetch(`/api/playlists/${plstid}`, { headers })
       if (!res.ok) throw new Error('Failed to load playlist')
-      return res.json()
+      return (await res.json()) as PlaylistDetail
     },
     staleTime: 30_000,
   })
 
   const openSong = (sid: string) => {
-    navigate({ to: '/songs/$sid', params: { sid } })
+    void navigate({ to: '/songs/$sid', params: { sid } })
   }
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>, sid: string) => {
@@ -74,14 +81,16 @@ function PlaylistDetailPage() {
             <CardTitle className="text-destructive">Unable to load playlist</CardTitle>
             <CardDescription>{error.message}</CardDescription>
           </CardHeader>
-          <CardContent>
-            <button
-              className="text-sm text-primary underline"
-              onClick={() => refetch()}
-              disabled={isFetching}
-            >
-              {isFetching ? 'Retrying…' : 'Try again'}
-            </button>
+            <CardContent>
+              <button
+                className="text-sm text-primary underline"
+                onClick={() => {
+                  void refetch()
+                }}
+                disabled={isFetching}
+              >
+                {isFetching ? 'Retrying…' : 'Try again'}
+              </button>
           </CardContent>
         </Card>
       </div>

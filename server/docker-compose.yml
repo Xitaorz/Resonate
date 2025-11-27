@@ -20,6 +20,7 @@ services:
     restart: unless-stopped
 
   db:
+    command: ["mysqld", "--log-bin-trust-function-creators=1"]
     image: mysql:8.0
     ports:
       - "${MYSQL_PORT:-3306}:3306"
