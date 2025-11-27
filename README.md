@@ -44,7 +44,7 @@ The backend provides a API and handles all database operations. You can run it u
    cd server
    docker-compose up
    ```
-The production database should be automatically loaded to the database when running docker-compose up.
+The production dataset should be automatically loaded to the database when running docker-compose up.
 
 2. **Start the frontend** (in another terminal):
    ```bash
